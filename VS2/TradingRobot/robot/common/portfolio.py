@@ -4,10 +4,6 @@ class Portfolio:
         self.core = core
         self.symbols = symbols
 
-    def add_symbol(self, symbol):
-        if symbol not in self.symbols:
-            self.symbols.append(symbol)
-
     def get_core(self):
         return self.core
 

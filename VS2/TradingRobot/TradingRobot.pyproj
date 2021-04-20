@@ -12,6 +12,7 @@
     <Name>TradingRobot</Name>
     <RootNamespace>TradingRobot</RootNamespace>
     <InterpreterId>Global|VisualStudio|Trading-env</InterpreterId>
+    <SuppressConfigureTestFrameworkPrompt>true</SuppressConfigureTestFrameworkPrompt>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -23,8 +24,29 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="main.py" />
-    <Compile Include="robot\alpaca_bot.py" />
-    <Compile Include="robot\bot_config.py" />
+    <Compile Include="robot\common\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="robot\trading_robot.py" />
+    <Compile Include="robot\alpaca_internals\alpaca_config.py" />
+    <Compile Include="robot\alpaca_internals\alpaca_core.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="robot\common\portfolio.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="robot\strategy\scalp_strategy.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="robot\strategy\strategy.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="robot\alpaca_internals\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="robot\strategy\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="robot\__init__.py" />
     <Compile Include="tests\test1.py" />
   </ItemGroup>
@@ -33,18 +55,14 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="config\" />
+    <Folder Include="robot\alpaca_internals\" />
+    <Folder Include="robot\common\" />
+    <Folder Include="robot\strategy\" />
     <Folder Include="tests\" />
     <Folder Include="robot\" />
-    <Folder Include="robot\__pycache__\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="config\alpaca_config.ini" />
-    <Content Include="robot\__pycache__\alpaca_bot.cpython-37.pyc" />
-    <Content Include="robot\__pycache__\alpaca_bot.cpython-39.pyc" />
-    <Content Include="robot\__pycache__\bot_config.cpython-39.pyc" />
-    <Content Include="robot\__pycache__\config.cpython-39.pyc" />
-    <Content Include="robot\__pycache__\__init__.cpython-37.pyc" />
-    <Content Include="robot\__pycache__\__init__.cpython-39.pyc" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

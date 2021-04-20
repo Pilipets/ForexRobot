@@ -1,3 +1,2 @@
-from .portfolio import Portfolio
-from .strategy import Strategy
+from .scalp_strategy import ScalpStrategy
 

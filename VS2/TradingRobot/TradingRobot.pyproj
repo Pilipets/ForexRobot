@@ -27,6 +27,12 @@
     <Compile Include="robot\common\__init__.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="robot\strategy\scalping\scalp_algo.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="robot\strategy\scalping\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="robot\trading_robot.py" />
     <Compile Include="robot\alpaca_internals\alpaca_config.py" />
     <Compile Include="robot\alpaca_internals\alpaca_core.py">
@@ -35,7 +41,7 @@
     <Compile Include="robot\common\portfolio.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="robot\strategy\scalp_strategy.py">
+    <Compile Include="robot\strategy\scalping\scalp_strategy.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="robot\strategy\strategy.py">
@@ -58,6 +64,7 @@
     <Folder Include="robot\alpaca_internals\" />
     <Folder Include="robot\common\" />
     <Folder Include="robot\strategy\" />
+    <Folder Include="robot\strategy\scalping\" />
     <Folder Include="tests\" />
     <Folder Include="robot\" />
   </ItemGroup>

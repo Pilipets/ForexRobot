@@ -1,2 +1,2 @@
-from .scalp_strategy import ScalpStrategy
+from .scalping import ScalpStrategy
 

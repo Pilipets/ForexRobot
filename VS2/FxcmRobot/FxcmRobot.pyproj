@@ -23,9 +23,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="main.py" />
-    <Compile Include="robot\data_control\data_frame.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="robot\common\portfolio.py" />
     <Compile Include="robot\common\trade.py">
       <SubType>Code</SubType>

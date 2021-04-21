@@ -23,9 +23,29 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="main.py" />
+    <Compile Include="robot\data_control\data_frame.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="robot\common\portfolio.py" />
+    <Compile Include="robot\common\trade.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="robot\common\__init__.py" />
+    <Compile Include="robot\data_control\frame_client.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="robot\fxcm_internals\fxcm_config.py" />
     <Compile Include="robot\fxcm_internals\__init__.py" />
-    <Compile Include="robot\forex_robot.py">
+    <Compile Include="robot\fx_robot.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="robot\data_control\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="robot\strategy\renko_macd_strategy.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="robot\strategy\__init__.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="robot\__init__.py">
@@ -36,6 +56,9 @@
     <Folder Include="config\" />
     <Folder Include="robot\fxcm_internals\" />
     <Folder Include="robot\" />
+    <Folder Include="robot\common\" />
+    <Folder Include="robot\data_control\" />
+    <Folder Include="robot\strategy\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="config\fxcm_config.ini" />

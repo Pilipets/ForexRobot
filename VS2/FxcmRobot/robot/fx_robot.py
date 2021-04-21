@@ -1,4 +1,5 @@
 import fxcmpy
+from robot.common import Portfolio
 
 class FxRobot:
     def __init__(self, config):
@@ -7,12 +8,10 @@ class FxRobot:
             server= config.server,
             log_level = config.log_level)
 
+        self.strategies = {}
 
     def __del__(self):
         self.api.close()
 
     def get_api(self):
         return self.api
-    
-    def create_portfolio():
-        pass

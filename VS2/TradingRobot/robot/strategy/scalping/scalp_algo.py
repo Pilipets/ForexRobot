@@ -1,34 +1,36 @@
 import pandas as pd
 from enum import Enum
 
+from ...common import Portfolio
+from ...alpaca_internals import AlpacaCore
+
 class ScalpAlgo:
     class State(Enum):
-        TO_BUY = 0
-        BUY_SUBMITTED = 1
-        TO_SELL = 2
-        SELL_SUBMITTED = 3
+        IDLE = 0,
+        BUY_SUBMITTED = 1,
+        BUY_EXECUTED = 2,
+        SELL_SUBMITTED = 3,
 
-    def __init__(self, core, symbol, lot):
+    def __init__(self, core : AlpacaCore, symbol, portfolio : Portfolio, trade_until):
         self.core = core
         self.api = core.get_api()
         self.symbol = symbol
-        self.lot = lot
-        self.bars = pd.DataFrame()
+        self.portfolio = portfolio
 
+        self.lot_size = portfolio.get_lot_size(symbol)
+        self.next_close = trade_until
 
-        clock = core.get_clock()
-        if not clock.is_open: return
-        self.next_close = clock.next_close - pd.Timedelta('7min')
-
-        # ISSUE: The problem is with the free Alpaca API - one can't received last 1 hour date
-        # That's why we initialize the bot with no bars
         self._init_state()
 
     def _init_state(self):
-        # One order at a time, state machine which makes transitions
+        # ISSUE: The problem is with the free Alpaca API:
+        # 1. One can't receive last 1 hour data with it;
+        # 2. Therefore we initialize the algo with no bars.
+        self.bars = pd.DataFrame()
+
         self.order = None
         self.position = None
-        self.state = State.TO_BUY
+        self.state = State.IDLE
 
     def _submit_buy(self):
         last_price = self.api.get_last_trade(self.symbol).price
@@ -46,7 +48,7 @@ class ScalpAlgo:
 
         except Exception as ex:
             print('Exception occured when submitting the order:', ex)
-            self._transition(State.TO_BUY)
+            self._transition(State.IDLE)
         
         else:
             self.order = order
@@ -85,20 +87,23 @@ class ScalpAlgo:
             self._transition(State.SELL_SUBMITTED)
 
     def _transition(self, new_state):
-        print(f'transition from {self._state} to {new_state}')
-        self._state = new_state
+        print(f'transition from {self.state} to {new_state}')
+        self.state = new_state
 
-    def _calc_buy_signal(self):
-        mavg = self.bars.rolling(3).mean().close.values
+    def _get_signal(self) -> int:
+        # ISSUE: Performance sucks here:
+        # One need to make updates from on_bar and calculate signals in O(1);
+        mavg = self.bars.close.rolling(3).mean().values
         closes = self.bars.close.values
 
         if closes[-2] < mavg[-2] and closes[-1] > mavg[-1]:
-            print(f'buy signal: closes[-2] {closes[-2]} < mavg[-2] {mavg[-2]}',
-                  f'closes[-1] {closes[-1]} > mavg[-1] {mavg[-1]}')
-            return True
+            print('New buy signal')
+            return 1
+        elif closes[-2] > mavg[-2] and closes[-1] < mavg[-1]:
+            print('New sell signal')
+            return -1
         else:
-            print(f'closes[-2:] = {closes[-2:]}, mavg[-2:] = {mavg[-2:]}')
-            return False
+            return 0
 
     def _outofmarket(self):
         return self.core.now() >= self.next_close
@@ -122,7 +127,7 @@ class ScalpAlgo:
         if self._outofmarket():
             return
         if self.state == State.TO_BUY:
-            if self._calc_buy_signal():
+            if self._is_buy_signal():
                 self._submit_buy()
 
     def on_order_update(self, event, order):
@@ -133,7 +138,7 @@ class ScalpAlgo:
                 self.position = self.api.get_position(self._symbol)
                 self._transition(State.TO_SELL)
                 self._submit_sell()
-            elif self._state == State.SELL_SUBMITTED:
+            elif self.state == State.SELL_SUBMITTED:
                 self.position = None
                 self._transition(State.TO_BUY)
 
@@ -143,7 +148,7 @@ class ScalpAlgo:
 
         elif event in ('canceled', 'rejected'):
             if event == 'rejected':
-                print(f'order rejected: current order = {self._order}')
+                print(f'order rejected: current order = {self.order}')
             self.order = None
             if self.state == State.BUY_SUBMITTED:
                 if self.position is not None:
@@ -153,7 +158,7 @@ class ScalpAlgo:
                     self._transition(State.TO_BUY)
             elif self.state == State.SELL_SUBMITTED:
                 self._transition(State.TO_SELL)
-                self._submit_sell(bailout=True)
+                self._submit_sell(market_closed=True)
             else:
                 print(f'unexpected state for {event}: {self._state}')
 
@@ -163,7 +168,7 @@ class ScalpAlgo:
 
         now = self.core.now()
         order = self.order
-        if self.state == State.BUY_SUBMITTED and now - self.order.submitted_at > pd.Timedelta('3min'):
+        if self.state == State.BUY_SUBMITTED and now - self.order.submitted_at > pd.Timedelta('2min'):
             self._cancel_order()
 
         if self.position is not None and self._outofmarket():

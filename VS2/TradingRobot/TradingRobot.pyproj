@@ -33,7 +33,7 @@
     <Compile Include="robot\strategy\scalping\__init__.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="robot\trading_robot.py" />
+    <Compile Include="robot\alpaca_robot.py" />
     <Compile Include="robot\alpaca_internals\alpaca_config.py" />
     <Compile Include="robot\alpaca_internals\alpaca_core.py">
       <SubType>Code</SubType>

@@ -23,8 +23,6 @@ def test1():
     #strategy = ScalpStrategy(portfolio, update_period=30)
     #strategy.run()
 
-def test2()
-
 if __name__ == '__main__':
     #setup_logger('MainLogger', 'console.log')
     test2()

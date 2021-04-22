@@ -13,7 +13,7 @@ strategy = BbandMacdStrategy(
     bars_period = 'm1',
     update_period = pd.Timedelta(90, unit='sec'),
     init_bars_cnt = 200,
-    run_for = pd.Timedelta(10, unit='min')
+    run_for = pd.Timedelta(5, unit='min')
 )
 
 strategy.run()

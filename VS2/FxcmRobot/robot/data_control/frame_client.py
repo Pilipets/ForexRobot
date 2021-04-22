@@ -54,6 +54,7 @@ class FrameClient:
         df.drop(['bbands_ma', 'bbands_std', 'bbands_up', 'bbands_dn'], axis=1, inplace=True)
 
     def update(self):
+        print('Updating data_frame with', self.indicators.keys())
         for indicator in self.indicators.values():
             indicator['func'](**indicator['args'])
 
@@ -61,12 +62,18 @@ class FrameClient:
         return self.df.iloc[-n:]
 
     def add_rows(self, rows):
-        i = 0
-        if not self.df.empty:
+        if rows.empty: return False
+        elif self.df.empty:
+            self.df = self.df.append(rows)
+            changed = True
+        else:
+            i = 0
             while i < len(rows) and self.df.index[-1] != rows.index[i]: i += 1
 
-        if i == len(rows) or i == 0: self.df = self.df.append(rows)
-        else: self.df = self.df.append(rows.iloc[i+1:])
-
+            if i == len(rows): self.df = self.df.append(rows)
+            else: self.df = self.df.append(rows.iloc[i+1:])
+            changed = (i == len(rows) or i + 1 != len(rows))
+            
         rows_drop = len(self.df) - self.max_size
         if rows_drop > 0: self.df = self.df.iloc[rows_drop:]
+        return changed

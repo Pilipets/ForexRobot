@@ -5,7 +5,7 @@ import pandas as pd
 from ..data_control import FrameClient
 
 class BaseStrategy:
-    def __init__(self, robot, symbol,
+    def __init__(self, robot : FxRobot, symbol,
                  update_period, bars_period, run_for : pd.Timedelta,
                  init_bars_cnt = 0):
         args = locals(); del args['self']
@@ -33,7 +33,7 @@ class BaseStrategy:
 
     def run(self):
         self._init_frame(self.init_bars_cnt)
-        robot = self.robot
+        robot : FxRobot = self.robot
         run_until = time.time() + self.run_for.total_seconds()
 
         while time.time() < run_until:
@@ -41,14 +41,17 @@ class BaseStrategy:
                 print("Running at ", time.time())
                 data = robot.get_last_bar('EUR/USD', period = 'm1', n = 1)
         
-                print('Received data:', data)
-                self.frame_client.add_rows(data)
-                self.frame_client.update()
+                print('Received bars:', data)
+                if self.frame_client.add_rows(data):
+                    print('Data update happened')
+                    self.frame_client.update()
 
-                trades = self.check_signals()
-                robot.execute_trades(trades)
+                    trades = self.check_signals()
+                    robot.execute_trades(trades)
 
                 robot.sleep_till_next_bar(data.index[-1], self.update_period)
             except KeyboardInterrupt:
-                print('\n\nKeyboard exception received. Exiting.')
-                exit()
+                print('\nKeyboard exception received. Exiting.')
+                break
+
+        # TODO: Close all portolio opened positions.

@@ -1,8 +1,7 @@
 from collections import defaultdict
 
 class Portfolio:
-    def __init__(self, core, symbols, pile_size, risk_rate = None, coefs = None):
-        self.core = core
+    def __init__(self, symbols, pile_size, risk_rate = None, coefs = None):
         self.symbols = set(symbols)
 
         if not risk_rate: risk_rate = 0.03
@@ -14,9 +13,6 @@ class Portfolio:
         self.active_orders = defaultdict(dict)
         self.closed_orders = defaultdict(dict)
         self.positions = dict()
-
-    def get_core(self):
-        return self.core
 
     def get_lot_size(self, symbol):
         pile_size = self.pile_sizes.get(symbol, None)

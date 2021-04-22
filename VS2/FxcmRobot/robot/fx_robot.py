@@ -27,6 +27,7 @@ class FxRobot:
         next_timestamp = last_timestamp.tz_localize('utc') + timedelta
         delta = (next_timestamp - pd.Timestamp.utcnow()).total_seconds()
 
+        print('Sleeping for', delta, 'seconds')
         time.sleep(max(0, delta))
 
     def get_api(self):

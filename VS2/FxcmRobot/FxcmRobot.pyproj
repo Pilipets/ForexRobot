@@ -39,6 +39,9 @@
     <Compile Include="robot\data_control\__init__.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="robot\strategy\base_strategy.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="robot\strategy\renko_macd_strategy.py">
       <SubType>Code</SubType>
     </Compile>

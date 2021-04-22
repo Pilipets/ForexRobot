@@ -1,11 +1,11 @@
 from .base_strategy import BaseStrategy
 
-class RenkoMacdStrategy(BaseStrategy):
-    def __init__(self, symbol, robot, update_period):
-        super().__init__(robot, update_period)
+class BbandMacdStrategy(BaseStrategy):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
         self.frame_client.macd()
-        self.frame_client.atr()
+        self.frame_client.bbands()
 
     def check_signals(self):
         print('Check signals called')

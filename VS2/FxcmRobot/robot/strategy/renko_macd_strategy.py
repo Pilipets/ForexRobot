@@ -1,8 +1,8 @@
 from .base_strategy import BaseStrategy
 
 class RenkoMacdStrategy(BaseStrategy):
-    def __init__(self, symbol, robot, update_period):
-        super().__init__(robot, update_period)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
         self.frame_client.macd()
         self.frame_client.atr()

@@ -5,17 +5,38 @@ import pandas as pd
 from ..data_control import FrameClient
 
 class BaseStrategy:
-    def __init__(self, robot, update_period):
+    def __init__(self, robot, symbol,
+                 update_period, bars_period, run_for : pd.Timedelta,
+                 init_bars_cnt = 0):
+        args = locals(); del args['self']
+        print('Configured BaseStrategy with', args)
+
         self.frame_client = FrameClient()
+
         self.robot = robot
+        self.symbol = symbol
         self.update_period = update_period
+        self.bars_period = bars_period
+
+        self.run_for = run_for
+        self.init_bars_cnt = init_bars_cnt
+
+    def _init_frame(self, init_bars_cnt):
+        if not init_bars_cnt: return
+
+        data = self.robot.get_last_bar(
+            self.symbol, period = self.bars_period, n = init_bars_cnt)
+        self.frame_client.add_rows(data)
 
     def check_signals():
-        pass
+        raise NotImplementedError('Please override check_signals in the derived class')
 
     def run(self):
+        self._init_frame(self.init_bars_cnt)
         robot = self.robot
-        for i in range(3):
+        run_until = time.time() + self.run_for.total_seconds()
+
+        while time.time() < run_until:
             try:
                 print("Running at ", time.time())
                 data = robot.get_last_bar('EUR/USD', period = 'm1', n = 1)

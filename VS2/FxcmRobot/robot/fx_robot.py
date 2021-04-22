@@ -25,11 +25,12 @@ class FxRobot:
 
     def sleep_till_next_bar(self, last_timestamp, timedelta):
         next_timestamp = last_timestamp.tz_localize('utc') + timedelta
-        #print('Next timestamp', next_timestamp)
-        #print('Current time', pd.Timestamp.utcnow())
         delta = (next_timestamp - pd.Timestamp.utcnow()).total_seconds()
 
         time.sleep(max(0, delta))
 
     def get_api(self):
         return self.api
+
+    def execute_trades(self, trades):
+        if trades: print('Executing', len(trades), 'trades')

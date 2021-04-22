@@ -10,6 +10,9 @@ class BaseStrategy:
         self.robot = robot
         self.update_period = update_period
 
+    def check_signals():
+        pass
+
     def run(self):
         robot = self.robot
         for i in range(3):
@@ -21,7 +24,8 @@ class BaseStrategy:
                 self.frame_client.add_rows(data)
                 self.frame_client.update()
 
-                self.check_signals()
+                trades = self.check_signals()
+                robot.execute_trades(trades)
 
                 robot.sleep_till_next_bar(data.index[-1], self.update_period)
             except KeyboardInterrupt:

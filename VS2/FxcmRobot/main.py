@@ -6,11 +6,17 @@ from robot import RenkoMacdStrategy
 config = Config.from_file("config/fxcm_config.ini")
 bot = FxRobot(config)
 
+strategy = RenkoMacdStrategy('EUR/USD', bot)
+
+strategy.run()
+
+
+api = bot.get_api()
+
 import pandas as pd
-df = pd.DataFrame()
-data = bot.get_last_bar('EUR/USD', period = 'm1', n = 1)
+bars = bot.get_last_bar('EUR/USD')
 
-df = df.append(data)
-data = bot.get_last_bar('EUR/USD', period = 'm1', n = 1)
+print(bars.index[-1].tz_localize('utc'))
+print(pd.Timestamp.utcnow())
 
-print(df.tail().index == data.index)
+df = strategy.frame_client.df

@@ -16,6 +16,7 @@ class FrameClient:
 
     def macd(self, fast = 12, slow = 26, macd_period = 9, name = 'macd'):
         self._save_strategy(name, self.macd, locals())
+        if self.df.empty: return
 
         df = self.df
         df["macd_fast"]=df["close"].ewm(span=fast, min_periods=fast).mean()
@@ -28,6 +29,7 @@ class FrameClient:
 
     def atr(self, period = 20, name = 'atr'):
         self._save_strategy(name, self.atr, locals())
+        if self.df.empty: return
 
         df = self.df
         df['tr_hl'] = abs(df['high'] - df['low'])
@@ -43,7 +45,17 @@ class FrameClient:
             indicator['func'](**indicator['args'])
 
     def get_last_bars(self, n = 1):
-        return self.df[-n]
+        return self.df.iloc[-n:]
 
     def add_rows(self, rows):
-        pass
+        if self.df.empty:
+            self.df = self.df.append(rows)
+            return
+
+        i = 0
+        while i < len(rows) and self.df.index[-1] != rows.index[i]: i += 1
+
+        if i == len(rows):
+            self.df = self.df.append(rows)
+        else:
+            self.df = self.df.append(rows.iloc[i+1:])

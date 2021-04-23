@@ -12,10 +12,15 @@ strategy = BbandMacdStrategy(
     robot = bot,
     bars_period = 'm1',
     update_period = pd.Timedelta(90, unit='sec'),
-    init_bars_cnt = 200,
+    init_bars_cnt = 300,
+    trigger_frame_size = 0,
     run_for = pd.Timedelta(5, unit='min')
 )
 
 strategy.run()
 
 df = strategy.frame_client.df
+
+api : fxcmpy = bot.api
+
+data = api.get_open_positions_summary()

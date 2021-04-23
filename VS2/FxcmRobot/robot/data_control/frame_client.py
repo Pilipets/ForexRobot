@@ -2,11 +2,17 @@ import pandas as pd
 from collections import defaultdict
 
 class FrameClient:
-    def __init__(self, max_size = 1000):
+    def __init__(self, max_size):
         self.df = pd.DataFrame()
 
         self.max_size = max_size
         self.indicators = {}
+
+    @staticmethod
+    def from_df(df):
+        client = FrameClient(len(df))
+        client.df = df
+        return client
 
     def _save_indicator(self, name, func, args):
         del args['self']
@@ -23,10 +29,10 @@ class FrameClient:
         df = self.df
         df["macd_fast"]=df["close"].ewm(span=fast, min_periods=fast).mean()
         df["macd_slow"]=df["close"].ewm(span=slow, min_periods=slow).mean()
-        df["macd_diff"]= df["macd_fast"] - df["macd_slow"]
-        df["macd"] = df["macd_diff"].ewm(span=macd_period, min_periods=macd_period).mean()
+        df["macd"]= df["macd_fast"] - df["macd_slow"]
+        df["macd_signal"] = df["macd"].ewm(span=macd_period, min_periods=macd_period).mean()
 
-        df.drop(['macd_fast', 'macd_slow', 'macd_diff'], axis=1, inplace=True)
+        df.drop(['macd_fast', 'macd_slow'], axis=1, inplace=True)
 
 
     def atr(self, period = 20, name = 'atr'):
@@ -58,8 +64,14 @@ class FrameClient:
         for indicator in self.indicators.values():
             indicator['func'](**indicator['args'])
 
+        rows_drop = len(self.df) - self.max_size
+        if rows_drop > 0: self.df = self.df.iloc[rows_drop:]
+
     def get_last_bars(self, n = 1):
         return self.df.iloc[-n:]
+
+    def get_size(self):
+        return len(self.df)
 
     def add_rows(self, rows):
         if rows.empty: return False
@@ -73,7 +85,5 @@ class FrameClient:
             if i == len(rows): self.df = self.df.append(rows)
             else: self.df = self.df.append(rows.iloc[i+1:])
             changed = (i == len(rows) or i + 1 != len(rows))
-            
-        rows_drop = len(self.df) - self.max_size
-        if rows_drop > 0: self.df = self.df.iloc[rows_drop:]
+
         return changed

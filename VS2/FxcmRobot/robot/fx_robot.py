@@ -35,3 +35,6 @@ class FxRobot:
 
     def execute_trades(self, trades):
         if trades: print('Executing', len(trades), 'trades')
+
+    def create_portfolio(self, **kwargs):
+        return Portfolio()

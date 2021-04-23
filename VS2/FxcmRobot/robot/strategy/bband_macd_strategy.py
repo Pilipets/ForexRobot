@@ -9,6 +9,8 @@ class BbandMacdStrategy(BaseStrategy):
 
     def check_signals(self):
         print('Check signals called')
+
+
         pass
 
 

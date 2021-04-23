@@ -14,7 +14,7 @@ strategy = RenkoMacdStrategy(
     update_period = pd.Timedelta(95, unit='sec'),
     init_bars_cnt = 300,
     trigger_frame_size = 250,
-    run_for = pd.Timedelta(3, unit='min')
+    run_for = pd.Timedelta(1, unit='min')
 )
 
 strategy.run()
@@ -24,3 +24,14 @@ df = strategy.frame_client.df
 api : fxcmpy = bot.api
 
 data = api.get_open_positions_summary()
+
+
+from robot.common import indicators
+
+df2 = df.copy()
+df3 = indicators.RenkoDF(df2)
+df4 = df2.merge(df3.loc[:,["date", "bar_num"]], how="outer", on="date")
+df4["bar_num"].fillna(method = 'ffill', inplace = True)
+df4.set_index('date', inplace=True)
+
+df4 = strategy.temp

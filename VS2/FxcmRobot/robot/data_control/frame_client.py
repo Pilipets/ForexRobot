@@ -16,6 +16,9 @@ class FrameClient:
         client.df = df
         return client
 
+    def get_df(self):
+        return self.df
+
     def _save_indicator(self, name, func, args):
         del args['self']
 
@@ -36,6 +39,10 @@ class FrameClient:
     def bbands(self, period = 20, std = 2, name = 'bbands'):
         if not self._save_indicator(name, self.bbands, locals()): return
         self.df = indicators.BollingerBands(self.df, period = period, std = std)
+
+    def slope(self, col_name, num = 5):
+        if self.df.empty: return
+        self.df[f'slope_{col_name}'] = indicators.slope(self.df.loc[:, col_name], num)
 
     def update(self):
         print('Updating data_frame with', self.indicators.keys())

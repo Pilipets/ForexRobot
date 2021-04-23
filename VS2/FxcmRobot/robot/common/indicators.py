@@ -46,34 +46,21 @@ def slope(ser, n):
 from stocktrends import Renko
 import numpy as np
 
-def renko_DF(DF, atr_period, brick_size):
-    df = DF.copy()
+def RenkoDF(df, atr_period = 120, brick_size = 0.5):
+    atr_brick_size = ATR(df).iloc[-1]['atr']
+
+    df.drop('atr', axis=1, inplace=True)
     df.reset_index(inplace=True)
-    df.columns = ["date", "open", "high", "low", "close", "volume"]
 
-    df2 = Renko(df)
-    df2.brick_size = max(brick_size, round(ATR(DF, atr_period)[-1], 0))
+    renko = Renko(df)
+    renko.brick_size = min(atr_brick_size, brick_size)
+    renko_df = renko.get_ohlc_data()
 
-    renko_df = df2.get_ohlc_data()
     renko_df["bar_num"] = np.where(renko_df["uptrend"]==True, 1 , np.where(renko_df["uptrend"] == False, -1, 0))
 
-    for i in range(1, len(renko_df["bar_num"])):
-        if np.sign(renko_df["bar_num"][i]) == np.sign(renko_df["bar_num"][i-1]):
-            renko_df["bar_num"][i] += renko_df["bar_num"][i-1]
+    for i in range(1, len(renko_df)):
+        if np.sign(renko_df.loc[i, ("bar_num")]) == np.sign(renko_df.loc[i-1, ("bar_num")]):
+            renko_df.loc[i, ("bar_num")] += renko_df.loc[i-1, ("bar_num")]
 
     renko_df.drop_duplicates(subset="date", keep="last", inplace=True)
-    renko_df.columns = ['Date', 'Open', 'High', 'Low', 'Close', 'uptrend', 'bar_num']
     return renko_df
-
-def renko_merge(DF):
-    df = copy.deepcopy(DF)
-    df["Date"] = df.index
-    renko = renko_DF(df)
-    renko.columns = ["Date","open","high","low","close","uptrend","bar_num"]
-    merged_df = df.merge(renko.loc[:,["Date","bar_num"]],how="outer",on="Date")
-    merged_df["bar_num"].fillna(method='ffill',inplace=True)
-    merged_df["macd"]= MACD(merged_df,12,26,9)[0]
-    merged_df["macd_sig"]= MACD(merged_df,12,26,9)[1]
-    merged_df["macd_slope"] = slope(merged_df["macd"],5)
-    merged_df["macd_sig_slope"] = slope(merged_df["macd_sig"],5)
-    return merged_df

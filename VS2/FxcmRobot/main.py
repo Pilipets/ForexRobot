@@ -7,14 +7,14 @@ from robot import RenkoMacdStrategy, BbandMacdStrategy
 config = Config.from_file("config/fxcm_config.ini")
 bot = FxRobot(config)
 
-strategy = BbandMacdStrategy(
+strategy = RenkoMacdStrategy(
     symbol = 'EUR/USD',
     robot = bot,
     bars_period = 'm1',
-    update_period = pd.Timedelta(90, unit='sec'),
+    update_period = pd.Timedelta(95, unit='sec'),
     init_bars_cnt = 300,
-    trigger_frame_size = 0,
-    run_for = pd.Timedelta(5, unit='min')
+    trigger_frame_size = 250,
+    run_for = pd.Timedelta(3, unit='min')
 )
 
 strategy.run()

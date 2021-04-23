@@ -7,12 +7,12 @@ from ..data_control import FrameClient
 class BaseStrategy:
     def __init__(self, robot : FxRobot, symbol,
                  update_period, bars_period, run_for : pd.Timedelta,
-                 trigger_frame_size = 0, frame_size = 500, init_bars_cnt = 0):
+                 trigger_frame_size = 0, max_frame_size = 500, init_bars_cnt = 0):
         args = locals()
         del args['self']
         print('Configured BaseStrategy with', args)
 
-        self.frame_client = FrameClient(frame_size)
+        self.frame_client = FrameClient(max_frame_size)
 
         self.robot = robot
         self.symbol = symbol
@@ -30,8 +30,8 @@ class BaseStrategy:
             self.symbol, period = self.bars_period, n = init_bars_cnt)
         self.frame_client.add_rows(data)
 
-    def check_signals():
-        raise NotImplementedError('Please override check_signals in the derived class')
+    def get_trades(self):
+        raise NotImplementedError('Please override get_trades in the derived class')
 
     def run(self):
         self._init_frame(self.init_bars_cnt)
@@ -42,15 +42,18 @@ class BaseStrategy:
         while time.time() < run_until:
             try:
                 print("Running at ", time.time())
-                data = robot.get_last_bar(self.symbol, period = self.bars_period, n = 1)
-        
-                print('Received bars:', data)
-                if self.frame_client.add_rows(data): # Data update happened
-                    print('Data update happened')
-                    self.frame_client.update()
 
+                data = robot.get_last_bar(self.symbol, period = self.bars_period, n = 1)
+                print('Received bars:', data)
+
+                if self.frame_client.add_rows(data):
+                    print('Data update happened')
+
+                    self.frame_client.update()
                     if self.trigger_frame_size <= self.frame_client.get_size():
-                        trades = self.check_signals()
+                        trigger_df = self.frame_client.get_last_bars(self.trigger_frame_size)
+
+                        trades = self.get_trades(trigger_df)
                         robot.execute_trades(trades)
 
                 robot.sleep_till_next_bar(data.index[-1], self.update_period)

@@ -38,3 +38,6 @@ class FxRobot:
 
     def create_portfolio(self, **kwargs):
         return Portfolio()
+
+    def __getattr__(self, name):
+        return getattr(self.api, name)

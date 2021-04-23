@@ -42,7 +42,7 @@ class FrameClient:
 
     def slope(self, col_name, num = 5):
         if self.df.empty: return
-        self.df[f'slope_{col_name}'] = indicators.slope(self.df.loc[:, col_name], num)
+        self.df[f'{col_name}_slope'] = indicators.slope(self.df.loc[:, col_name], num)
 
     def update(self):
         print('Updating data_frame with', self.indicators.keys())

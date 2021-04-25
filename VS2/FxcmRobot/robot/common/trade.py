@@ -9,5 +9,15 @@ class Trade:
         self.session = time_in_force
         self.order_type = order_type
 
+    def get_fxcm_args(self):
+        args = self.__dict__
+
+        # Modifying names
+        for x, y in [('session', 'time_in_force')]:
+            args[y] = args.get(x, None)
+            del args[x]
+        
+        return args
+
     def __str__(self):
         return Trade.__name__ + str(self.__dict__)

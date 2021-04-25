@@ -1,3 +1,6 @@
+import pandas as pd
+pd.options.mode.chained_assignment = None  # default='warn'
+
 def ATR(df, period = 20):
     df['tr_hl'] = abs(df['high'] - df['low'])
     df['tr_hp'] = abs(df['high'] - df['close'].shift(1))

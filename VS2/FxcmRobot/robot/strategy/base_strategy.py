@@ -14,15 +14,15 @@ class BaseStrategy:
         del args['self']
         print('Configured BaseStrategy with', args)
 
-        self.frame_client = FrameClient(max_frame_size)
-
         self.robot = robot
-        self.symbols = portfolio.get_symbols()
+        self.symbols = list(portfolio.get_symbols())
+        self.frame_clients = [FrameClient(max_frame_size)
+                              for _ in range(len(self.symbols))]
         self.portfolio = portfolio
+
         self.update_bars_cnt = update_bars_cnt
         self.update_period = update_period
         self.bars_period = bars_period
-
         self.run_for = run_for
         self.trigger_frame_size = trigger_frame_size
         self.init_bars_cnt = init_bars_cnt
@@ -30,9 +30,15 @@ class BaseStrategy:
     def _init_frame(self, init_bars_cnt):
         if not init_bars_cnt: return
 
-        data = self.robot.get_last_bar(
-            self.symbol, period = self.bars_period, n = init_bars_cnt)
-        self.frame_client.add_rows(data)
+        for idx, symbol in enumerate(self.symbols):
+            try:
+                print('Initializing', symbol, 'frame with', init_bars_cnt, 'elements')
+                data = self.robot.get_last_bar(symbol,
+                                               period = self.bars_period,
+                                               n = init_bars_cnt)
+                self.frame_clients[idx].add_rows(data)
+            except Exception as ex:
+                print(ex)
 
     def update_trades(self):
         raise NotImplementedError('Please override update_trades in the derived class')
@@ -47,21 +53,31 @@ class BaseStrategy:
             try:
                 print("Running at ", time.time())
 
-                data = robot.get_last_bar(
-                    self.symbol, period = self.bars_period, n = self.update_bars_cnt)
-                print('Received bars:', data)
+                last_bar_time = pd.Timestamp.now()
+                df_updates = [(pd.DataFrame(), False) for _ in range(len(self.symbols))]
 
-                if self.frame_client.add_rows(data):
-                    print('Data update happened')
+                for idx, symbol in enumerate(self.symbols):
+                    try:
+                        data = robot.get_last_bar(symbol, period = self.bars_period,
+                                                  n = self.update_bars_cnt)
+
+                        print('Received bars for', symbol, ':', data)
+                        last_bar_time = min(last_bar_time, data.index[-1])
+
+                        client = self.frame_clients[idx]
+                        if client.add_rows(data):
+                            print('Data update happened for', symbol)
             
-                    self.frame_client.update()
-                    if self.trigger_frame_size <= self.frame_client.get_size():
-                        trigger_df = self.frame_client.get_last_bars(self.trigger_frame_size)
-                        self.update_trades(trigger_df)
+                            if self.trigger_frame_size <= client.get_size():
+                                trigger_df = client.get_last_bars(self.trigger_frame_size)
+                                df_updates[idx] = trigger_df, True
 
-                robot.sleep_till_next_bar(data.index[-1], self.update_period)
+                    except Exception as ex:
+                        print("Exception received when getting the data update for", symbol)
+                        print(ex)
+
+                self.update_trades(df_updates)
+                robot.sleep_till_next_bar(last_bar_time, self.update_period)
             except KeyboardInterrupt:
                 print('\nKeyboard exception received. Exiting.')
                 break
-
-        # TODO: Close all portolio opened positions.

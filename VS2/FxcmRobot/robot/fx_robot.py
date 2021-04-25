@@ -41,7 +41,7 @@ class FxRobot:
 
     def execute_trade(self, trade : Trade, portfolio : Portfolio):
         print('Executing new trade:', trade)
-        return api.open_trade(trade)
+        return self.api.open_trade(**trade.get_fxcm_args())
 
     def close_all_positions_for(self, symbol, **args):
         print('Closing all positions for', symbol, 'with args', args)

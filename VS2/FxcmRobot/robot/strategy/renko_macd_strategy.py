@@ -7,8 +7,21 @@ class RenkoMacdStrategy(BaseStrategy):
     def __init__(self, portfolio : Portfolio, **kwargs):
         super().__init__(portfolio = portfolio, **kwargs)
 
+        self.c_args = dict(time_in_force='GTC', order_type='AtMarket')
         self.trade_pat = self.self.portfolio.create_trade_shortcut(
             'rm_pat', is_in_pips=True, time_in_force='GTC', order_type='AtMarket')
+
+    def _clean_positions(self):
+        for symbol in self.portfolio.get_symbols():
+            robot.close_all_positions_for(symbol, **self.c_args)
+
+    def run(self):
+        print("Starting the", RenkoMacdStrategy.__name__, 'strategy')
+        self._clean_positions()
+        super().run()
+        print("Closing the", RenkoMacdStrategy.__name__, 'strategy')
+        self._clean_positions()
+
 
     def prepare_df(self, df):
         renko_df = indicators.RenkoDF(df) # df index is reset in the RenkoDF
@@ -73,20 +86,17 @@ class RenkoMacdStrategy(BaseStrategy):
                 robot.execute_trade(trade, self.portfolio)
 
             elif signal == "Close":
-                robot.close_all_for_symbol(symbol)
-                #print("All positions closed for ", symbol)
+                robot.close_all_positions_for(symbol, self.portfolio, **self.c_args)
                 
             elif signal == "Close_Buy":
-                robot.close_all_for_symbol(symbol)
-                #print("Existing Short position closed for ", symbol)
+                robot.close_all_positions_for(symbol, self.portfolio, **self.c_args)
                 trade = trade_pat.create_trade(symbol=symbol, is_buy=True, amount=3)
                 robot.execute_trade(trade, self.portfolio)
 
             elif signal == "Close_Sell":
-                robot.close_all_for_symbol(symbol)
-                #print("Existing long position closed for ", symbol)
+                robot.close_all_positions_for(symbol, self.portfolio, **self.c_args)
                 trade = trade_pat.create_trade(symbol=symbol, is_buy=False, amount=3)
-                robot.execute_trade(trade, self.portfolio, )
+                robot.execute_trade(trade, self.portfolio)
 
         except Exception as ex:
             print(ex)

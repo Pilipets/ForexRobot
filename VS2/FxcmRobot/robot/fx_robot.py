@@ -43,6 +43,6 @@ class FxRobot:
         print('Executing new trade:', trade)
         return api.open_trade(trade)
 
-    def close_positions_for(self, symbol, **args):
+    def close_all_positions_for(self, symbol, **args):
         print('Closing all positions for', symbol, 'with args', args)
         self.api.close_all_for_symbol(symbol, **args)

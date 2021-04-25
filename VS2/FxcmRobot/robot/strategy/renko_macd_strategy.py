@@ -1,11 +1,14 @@
 from .base_strategy import BaseStrategy
 from ..data_control import FrameClient
-from ..common import indicators, Trade
+from ..common import indicators, Trade, Portfolio, TradeShortcut
 import numpy as np
 
 class RenkoMacdStrategy(BaseStrategy):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, portfolio : Portfolio, **kwargs):
+        super().__init__(portfolio = portfolio, **kwargs)
+
+        self.trade_pat = self.self.portfolio.create_trade_shortcut(
+            'rm_pat', is_in_pips=True, time_in_force='GTC', order_type='AtMarket')
 
     def prepare_df(self, df):
         renko_df = indicators.RenkoDF(df) # df index is reset in the RenkoDF
@@ -41,16 +44,16 @@ class RenkoMacdStrategy(BaseStrategy):
 
         return signal
 
-    def get_trades(self, df):
+    def update_trades(self, df):
         print('Check get_trades called with', len(df), 'items')
-        api = self.robot
+        robot = self.robot
         symbol = self.symbol
+        trade_pat : TradeShortcut = self.trade_pat
 
         try:
             open_pos = api.get_open_positions()
 
             last_signal = None
-
             if len(open_pos) > 0:
                 open_pos_cur = open_pos.loc[open_pos["currency"] == symbol, "isBuy"]
 
@@ -62,28 +65,28 @@ class RenkoMacdStrategy(BaseStrategy):
             signal = self.trade_signal(df, last_signal)
             
             if signal == "Buy":
-                api.open_trade(symbol=symbol, is_buy=True, is_in_pips=True, amount=3, time_in_force='GTC', order_type='AtMarket')
-                print("New long position initiated for ", symbol)
+                trade = trade_pat.create_trade(symbol=symbol, is_buy=True, amount=3)
+                self.robot.execute_trade(trade, self.portfolio)
 
             elif signal == "Sell":
-                api.open_trade(symbol=symbol, is_buy=False, is_in_pips=True, amount=3, time_in_force='GTC', order_type='AtMarket')
-                print("New short position initiated for ", symbol)
+                trade = trade_pat.create_trade(symbol=symbol, is_buy=False, amount=3)
+                robot.execute_trade(trade, self.portfolio)
 
             elif signal == "Close":
-                api.close_all_for_symbol(symbol)
-                print("All positions closed for ", symbol)
+                robot.close_all_for_symbol(symbol)
+                #print("All positions closed for ", symbol)
                 
             elif signal == "Close_Buy":
-                api.close_all_for_symbol(symbol)
-                print("Existing Short position closed for ", symbol)
-                api.open_trade(symbol=symbol, is_buy=True, is_in_pips=True, amount=3, time_in_force='GTC', order_type='AtMarket')
-                print("New long position initiated for ", symbol)
+                robot.close_all_for_symbol(symbol)
+                #print("Existing Short position closed for ", symbol)
+                trade = trade_pat.create_trade(symbol=symbol, is_buy=True, amount=3)
+                robot.execute_trade(trade, self.portfolio)
 
             elif signal == "Close_Sell":
-                api.close_all_for_symbol(symbol)
-                print("Existing long position closed for ", symbol)
-                api.open_trade(symbol=symbol, is_buy=False, is_in_pips=True, amount=3, time_in_force='GTC', order_type='AtMarket')
-                print("New short position initiated for ", symbol)
+                robot.close_all_for_symbol(symbol)
+                #print("Existing long position closed for ", symbol)
+                trade = trade_pat.create_trade(symbol=symbol, is_buy=False, amount=3)
+                robot.execute_trade(trade, self.portfolio, )
 
         except Exception as ex:
             print(ex)

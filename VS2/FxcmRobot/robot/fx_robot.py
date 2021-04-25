@@ -1,6 +1,6 @@
 import fxcmpy
 import pandas as pd
-from robot.common import Portfolio
+from .common import Portfolio, Trade
 import time
 
 class FxRobot:
@@ -33,11 +33,16 @@ class FxRobot:
     def get_api(self):
         return self.api
 
-    def execute_trades(self, trades):
-        if trades: print('Executing', len(trades), 'trades')
-
     def create_portfolio(self, symbols, pile_size, **kwargs):
         return Portfolio(symbols, pile_size, **kwargs)
 
     def __getattr__(self, name):
         return getattr(self.api, name)
+
+    def execute_trade(self, trade : Trade, portfolio : Portfolio):
+        print('Executing new trade:', trade)
+        return api.open_trade(trade)
+
+    def close_positions_for(self, symbol, **args):
+        print('Closing all positions for', symbol, 'with args', args)
+        self.api.close_all_for_symbol(symbol, **args)

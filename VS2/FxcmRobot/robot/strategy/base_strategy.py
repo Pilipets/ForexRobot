@@ -3,11 +3,13 @@ import time
 import pandas as pd
 
 from ..data_control import FrameClient
+from ..common import Portfolio
 
 class BaseStrategy:
-    def __init__(self, robot : FxRobot, symbol,
+    def __init__(self, robot : FxRobot, portfolio : Portfolio,
                  update_period, bars_period, run_for : pd.Timedelta,
-                 trigger_frame_size = 0, max_frame_size = 500, init_bars_cnt = 0):
+                 update_bars_cnt = 1, trigger_frame_size = 0, max_frame_size = 500,
+                 init_bars_cnt = 0):
         args = locals()
         del args['self']
         print('Configured BaseStrategy with', args)
@@ -15,7 +17,9 @@ class BaseStrategy:
         self.frame_client = FrameClient(max_frame_size)
 
         self.robot = robot
-        self.symbol = symbol
+        self.symbols = portfolio.get_symbols()
+        self.portfolio = portfolio
+        self.update_bars_cnt = update_bars_cnt
         self.update_period = update_period
         self.bars_period = bars_period
 
@@ -30,19 +34,8 @@ class BaseStrategy:
             self.symbol, period = self.bars_period, n = init_bars_cnt)
         self.frame_client.add_rows(data)
 
-    def get_trades(self):
-        raise NotImplementedError('Please override get_trades in the derived class')
-
-    def update(self, data):
-        if self.frame_client.add_rows(data):
-            print('Data update happened')
-            
-            self.frame_client.update()
-            if self.trigger_frame_size <= self.frame_client.get_size():
-                trigger_df = self.frame_client.get_last_bars(self.trigger_frame_size)
-                
-                trades = self.get_trades(trigger_df)
-                robot.execute_trades(trades)
+    def update_trades(self):
+        raise NotImplementedError('Please override update_trades in the derived class')
 
     def run(self):
         self._init_frame(self.init_bars_cnt)
@@ -54,10 +47,18 @@ class BaseStrategy:
             try:
                 print("Running at ", time.time())
 
-                data = robot.get_last_bar(self.symbol, period = self.bars_period, n = 1)
+                data = robot.get_last_bar(
+                    self.symbol, period = self.bars_period, n = self.update_bars_cnt)
                 print('Received bars:', data)
 
-                self.update(data)
+                if self.frame_client.add_rows(data):
+                    print('Data update happened')
+            
+                    self.frame_client.update()
+                    if self.trigger_frame_size <= self.frame_client.get_size():
+                        trigger_df = self.frame_client.get_last_bars(self.trigger_frame_size)
+                        self.update_trades(trigger_df)
+
                 robot.sleep_till_next_bar(data.index[-1], self.update_period)
             except KeyboardInterrupt:
                 print('\nKeyboard exception received. Exiting.')

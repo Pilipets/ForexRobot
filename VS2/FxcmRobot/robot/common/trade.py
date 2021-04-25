@@ -8,3 +8,6 @@ class Trade:
         self.is_in_pips = is_in_pips
         self.session = time_in_force
         self.order_type = order_type
+
+    def __str__(self):
+        return Trade.__name__ + str(self.__dict__)

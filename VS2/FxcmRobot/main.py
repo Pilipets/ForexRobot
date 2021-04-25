@@ -7,7 +7,11 @@ from robot import RenkoMacdStrategy, BbandMacdStrategy
 config = Config.from_file("config/fxcm_config.ini")
 bot = FxRobot(config)
 
+bot = None
+portfolio = bot.create_portfolio(['EUR/USD'], 1500)
+
 strategy = RenkoMacdStrategy(
+    portfolio = portfolio,
     symbol = 'EUR/USD',
     robot = bot,
     bars_period = 'm1',
@@ -34,5 +38,6 @@ s1 = portfolio.create_trade_shortcut(
 )
 
 trade = s1.create_trade(symbol='EUR/USD', amount = 5)
+print(trade)
 
 data = bot.get_last_bar('EUR/USD')

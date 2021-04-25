@@ -8,6 +8,9 @@ class TradeShortcut:
         args.update(self.__dict__)
         return Trade(**args)
 
+    def get_args(self):
+        return self.__dict__
+
 
 class Portfolio:
     def __init__(self, symbols, pile_size, risk_rate = 0.03, coefs = None):
@@ -29,6 +32,13 @@ class Portfolio:
         self.trade_shortcuts[id] = shortcut
         return shortcut
 
-    def create_trade(self, id, **args):
-        return self.trade_shortcuts.get(id, None).create_trade(**args)
+    def create_trade(self, shortcut_id, **args):
+        s = self.trade_shortcuts.get(shortcut_id, None)
+        return s.create_trade(**args) if s else None
+
+    def get_shortcut(self, shortcut_id):
+        return self.trade_shortcuts.get(shortcut_id, None)
+
+    def get_symbols(self):
+        return self.symbols
 

@@ -36,8 +36,8 @@ class FxRobot:
     def execute_trades(self, trades):
         if trades: print('Executing', len(trades), 'trades')
 
-    def create_portfolio(self, **kwargs):
-        return Portfolio()
+    def create_portfolio(self, symbols, pile_size, **kwargs):
+        return Portfolio(symbols, pile_size, **kwargs)
 
     def __getattr__(self, name):
         return getattr(self.api, name)

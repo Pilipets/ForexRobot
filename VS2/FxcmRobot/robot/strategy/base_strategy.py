@@ -33,6 +33,17 @@ class BaseStrategy:
     def get_trades(self):
         raise NotImplementedError('Please override get_trades in the derived class')
 
+    def update(self, data):
+        if self.frame_client.add_rows(data):
+            print('Data update happened')
+            
+            self.frame_client.update()
+            if self.trigger_frame_size <= self.frame_client.get_size():
+                trigger_df = self.frame_client.get_last_bars(self.trigger_frame_size)
+                
+                trades = self.get_trades(trigger_df)
+                robot.execute_trades(trades)
+
     def run(self):
         self._init_frame(self.init_bars_cnt)
 
@@ -46,16 +57,7 @@ class BaseStrategy:
                 data = robot.get_last_bar(self.symbol, period = self.bars_period, n = 1)
                 print('Received bars:', data)
 
-                if self.frame_client.add_rows(data):
-                    print('Data update happened')
-
-                    self.frame_client.update()
-                    if self.trigger_frame_size <= self.frame_client.get_size():
-                        trigger_df = self.frame_client.get_last_bars(self.trigger_frame_size)
-
-                        trades = self.get_trades(trigger_df)
-                        robot.execute_trades(trades)
-
+                self.update(data)
                 robot.sleep_till_next_bar(data.index[-1], self.update_period)
             except KeyboardInterrupt:
                 print('\nKeyboard exception received. Exiting.')

@@ -24,11 +24,15 @@ df = strategy.frame_client.df
 api : fxcmpy = bot.api
 
 data = api.get_open_positions()
-d1 = api.get_open_position(70330609)
 
-data = bot.get_last_bar('EUR/USD', period = 'm1', n = 300)
+portfolio = bot.create_portfolio(['EUR/USD'], 1500)
+s1 = portfolio.create_trade_shortcut(
+    'renko_macd_1',
+    is_buy=True, is_in_pips=True,
+    time_in_force='GTC',
+    order_type='AtMarket'
+)
 
-open_pos = api.get_open_positions()
+trade = s1.create_trade(symbol='EUR/USD', amount = 5)
 
-temp = open_pos.loc[open_pos['currency'] == 'BTC/USD', "isBuy"]
-temp.iloc[-1]
+data = bot.get_last_bar('EUR/USD')

@@ -1,6 +1,6 @@
 from .base_strategy import BaseStrategy
 from ..data_control import FrameClient
-from ..common import indicators
+from ..common import indicators, Trade
 import numpy as np
 
 class RenkoMacdStrategy(BaseStrategy):
@@ -21,21 +21,21 @@ class RenkoMacdStrategy(BaseStrategy):
 
         return client.get_df().dropna()
 
-    def trade_signal(self, df, l_s):
-        signal = ""
+    def trade_signal(self, df, last_signal):
+        signal = None
 
         bar_num = df["bar_num"][-1]
         crossover = np.sign(df["macd"][-1] - df["macd_signal"][-1]) + np.sign(df["macd_slope"][-1] - df["macd_signal_slope"][-1])
 
-        if l_s == "":
+        if last_signal is None:
             if bar_num >= 2 and crossover == 2: signal = "Buy"
             elif bar_num <= -2 and crossover == -2: signal = "Sell"
             
-        elif l_s == "long":
+        elif last_signal == "long":
             if bar_num <= -2 and crossover == -2: signal = "Close_Sell"
             elif crossover == -2: signal = "Close"
             
-        elif l_s == "short":
+        elif last_signal == "short":
             if bar_num >= 2 and crossover == 2: signal = "Close_Buy"
             elif crossover == 2: signal = "Close"
 
@@ -48,16 +48,18 @@ class RenkoMacdStrategy(BaseStrategy):
 
         try:
             open_pos = api.get_open_positions()
-            if len(open_pos) == 0: return
 
-            long_short = ""
-            open_pos_cur = open_pos.loc[open_pos["currency"] == symbol, "isBuy"]
-            if not open_pos_cur.empty:
-                if open_pos_cur.iloc[0] == True: long_short = "long"
-                else: long_short = "short"
+            last_signal = None
+
+            if len(open_pos) > 0:
+                open_pos_cur = open_pos.loc[open_pos["currency"] == symbol, "isBuy"]
+
+                if len(open_pos_cur) > 0:
+                    if open_pos_cur.iloc[0] == True: last_signal = "long"
+                    else: last_signal = "short"
             
             df = self.prepare_df(df)
-            signal = self.trade_signal(df, long_short)
+            signal = self.trade_signal(df, last_signal)
             
             if signal == "Buy":
                 api.open_trade(symbol=symbol, is_buy=True, is_in_pips=True, amount=3, time_in_force='GTC', order_type='AtMarket')

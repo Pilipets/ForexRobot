@@ -10,11 +10,12 @@ class BaseStrategy:
                  update_period, bars_period, run_for : pd.Timedelta,
                  update_bars_cnt = 1, trigger_frame_size = 0, max_frame_size = 500,
                  init_bars_cnt = 0):
-        args = locals()
-        del args['self']
-        print('Configured BaseStrategy with', args)
+        args = locals(); del args['self']; del args['portfolio'];
 
         self.robot = robot
+        self.logger = self.robot.get_logger()
+        self.logger.info(f'Configured {BaseStrategy.__name__} with {args}')
+
         self.symbols = list(portfolio.get_symbols())
         self.frame_clients = [FrameClient(max_frame_size)
                               for _ in range(len(self.symbols))]
@@ -32,7 +33,7 @@ class BaseStrategy:
 
         for idx, symbol in enumerate(self.symbols):
             try:
-                print('Initializing', symbol, 'frame with', init_bars_cnt, 'elements')
+                self.logger.debug(f'Initializing {symbol} frame with {init_bars_cnt} elements')
                 data = self.robot.get_last_bar(symbol,
                                                period = self.bars_period,
                                                n = init_bars_cnt)
@@ -48,36 +49,39 @@ class BaseStrategy:
 
         robot : FxRobot = self.robot
         run_until = time.time() + self.run_for.total_seconds()
+        self.logger.info(f'Running strategy until {pd.Timestamp.now() + self.run_for}')
 
         while time.time() < run_until:
             try:
-                print("Running at ", time.time())
-
                 last_bar_time = pd.Timestamp.now()
-                df_updates = [(pd.DataFrame(), False) for _ in range(len(self.symbols))]
+                self.logger.info(f'Running iteration at {last_bar_time}')
 
+                df_updates = [(pd.DataFrame(), False) for _ in range(len(self.symbols))]
                 for idx, symbol in enumerate(self.symbols):
                     try:
+                        self.logger.info(f'Processing {symbol} update')
                         data = robot.get_last_bar(symbol, period = self.bars_period,
                                                   n = self.update_bars_cnt)
-
-                        print('Received bars for', symbol, ':', data)
-                        last_bar_time = min(last_bar_time, data.index[-1])
+                        last_bar_time = data.index[-1]
 
                         client = self.frame_clients[idx]
                         if client.add_rows(data):
-                            print('Data update happened for', symbol)
+                            self.logger.debug(f'Data update happened for {symbol}')
             
                             if self.trigger_frame_size <= client.get_size():
                                 trigger_df = client.get_last_bars(self.trigger_frame_size)
                                 df_updates[idx] = trigger_df, True
 
                     except Exception as ex:
-                        print("Exception received when getting the data update for", symbol)
-                        print(ex)
+                        self.logger.warning(f'Exception received: {ex}')
 
                 self.update_trades(df_updates)
                 robot.sleep_till_next_bar(last_bar_time, self.update_period)
+
             except KeyboardInterrupt:
-                print('\nKeyboard exception received. Exiting.')
+                self.logger.error('\nKeyboard exception received. Exiting.')
+                break
+
+            except Exception as ex:
+                self.logger.error(f'\nUnhandled exception received: {ex}')
                 break

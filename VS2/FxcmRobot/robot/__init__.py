@@ -1,3 +1,3 @@
 from .fx_robot import FxRobot
-from .fxcm_internals import FxcmConfig as Config
+from .fx_config import FxConfig
 from .strategy import RenkoMacdStrategy, BbandMacdStrategy

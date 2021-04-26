@@ -19,5 +19,5 @@ class Trade:
         
         return args
 
-    def __str__(self):
-        return Trade.__name__ + str(self.__dict__)
+    def __repr__(self):
+        return f'{Trade.__name__}({self.__dict__})'

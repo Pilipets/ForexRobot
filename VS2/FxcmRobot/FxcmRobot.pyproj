@@ -34,8 +34,9 @@
     <Compile Include="robot\data_control\frame_client.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="robot\fxcm_internals\fxcm_config.py" />
-    <Compile Include="robot\fxcm_internals\__init__.py" />
+    <Compile Include="robot\fx_config.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="robot\fx_robot.py">
       <SubType>Code</SubType>
     </Compile>
@@ -63,14 +64,13 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="config\" />
-    <Folder Include="robot\fxcm_internals\" />
     <Folder Include="robot\" />
     <Folder Include="robot\common\" />
     <Folder Include="robot\data_control\" />
     <Folder Include="robot\strategy\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="config\fxcm_config.ini" />
+    <Content Include="config\init_config.ini" />
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="Global|VisualStudio|Trading-env" />

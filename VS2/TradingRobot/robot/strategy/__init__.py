@@ -1,2 +1,0 @@
-from .scalping import ScalpStrategy
-

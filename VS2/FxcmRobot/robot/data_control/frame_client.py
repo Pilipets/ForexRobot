@@ -45,7 +45,6 @@ class FrameClient:
         self.df[f'{col_name}_slope'] = indicators.slope(self.df.loc[:, col_name], num)
 
     def update(self):
-        print('Updating data_frame with', self.indicators.keys())
         for indicator in self.indicators.values():
             indicator['func'](**indicator['args'])
 

@@ -3,7 +3,7 @@ class Trade:
                  is_buy=False, is_in_pips=True,
                  time_in_force='GTC', stop=None,
                  trailing_step=None, order_type='AtMarket'):
-        self.trade_id = None
+        self.order_id = None
 
         self.symbol = symbol
         self.amount = amount
@@ -14,11 +14,14 @@ class Trade:
         self.stop = stop
         self.trailing_step = trailing_step
 
-    def set_id(self, id):
-        self.trade_id = id
+    def set_order_id(self, id):
+        self.order_id = id
+
+    def get_order_id(self):
+        return self.order_id
 
     def get_fxcm_args(self):
-        args = self.__dict__; del args['trade_id']
+        args = self.__dict__; del args['order_id']
 
         # Modifying names
         for x, y in [('session', 'time_in_force')]:

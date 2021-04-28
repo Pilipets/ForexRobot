@@ -26,13 +26,16 @@ class Portfolio:
         self.lot_sizes = {sym : int(pile_size * self.risk_rate) for sym in symbols}
 
         self.trade_shortcuts = {}
+        self.order_ids = set()
+
+    def add_order(self, order):
+        self.order_ids.add(str(order.get_orderId()))
 
     def get_lot_size(self, symbol):
         return self.lot_sizes.get(symbol, None)
 
     def create_trade_shortcut(self, id, **args):
         shortcut = TradeShortcut(id, **args)
-        print(f'Adding new trade shortcut in Portfolio({self.id}): {shortcut}')
         self.trade_shortcuts[id] = shortcut
         return shortcut
 
@@ -43,11 +46,16 @@ class Portfolio:
     def get_shortcut(self, shortcut_id):
         return self.trade_shortcuts.get(shortcut_id, None)
 
+    def get_order_ids(self):
+        return self.order_ids
+
     def get_symbols(self):
         return self.symbols
 
     def __repr__(self):
-        return f'{Portfolio.__name__}({self.__dict__})'
+        args = self.__dict__
+        args['id'] = self.id
+        return f'{Portfolio.__name__}({args})'
 
     @property
     def id(self):

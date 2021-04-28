@@ -8,5 +8,4 @@ class BbandMacdStrategy(BaseStrategy):
         self.frame_client.bbands()
 
     def check_signals(self):
-        print('Check signals called')
         pass

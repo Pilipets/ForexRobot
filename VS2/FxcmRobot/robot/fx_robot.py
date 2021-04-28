@@ -29,13 +29,13 @@ class FxRobot:
     def __del__(self):
         self.api.close()
 
-    def get_last_bar(self, symbol, columns = ['bids'], period = 'm1', n = 1):
+    def get_last_bar(self, symbol, n = 1, columns = ['bids', 'tickqty'], period = 'm1'):
         self.logger.debug(f'Querying last {n} bars for {symbol}')
         bars : pd.DataFrame = self.api.get_candles(
             symbol, period = period, number = n, columns = columns)
 
-        bars.rename(columns={
-            "bidopen": "open", "bidclose": "close", "bidhigh": "high", "bidlow" : "low"},
+        bars.rename(columns={"bidopen": "open", "bidclose": "close",
+            "bidhigh": "high", "bidlow" : "low", "tickqty": "volume"},
             inplace=True
         )
         return bars
@@ -63,10 +63,16 @@ class FxRobot:
 
     def open_trade(self, trade : Trade, portfolio : Portfolio):
         self.logger.info(f'Opening new trade for portfolio({portfolio.id}): {trade}')
-        id = self.api.open_trade(**trade.get_fxcm_args())
-        trade.set_id(id)
-        return id
+        order = self.api.open_trade(**trade.get_fxcm_args())
+        self.temp = order
+        self.logger.info(f"Adding new trade({order.get_orderId()}) to the portfolio({portfolio.id})")
+        portfolio.add_order(order)
 
-    def close_all_positions_for(self, symbol, **args):
+    def close_trade(self, position, portfolio : Portfolio, **close_args):
+        currency, trade_id = position['currency'], position['tradeId']
+        self.logger.info(f"Closing position({trade_id}) for currency({currency}) in the portfolio({portfolio.id}) with args {close_args}")
+        self.api.close_trade(trade_id, **close_args)
+
+    def close_all_for_symbol(self, symbol, **args):
         self.logger.info(f'Closing all positions for {symbol} with args {args}')
         self.api.close_all_for_symbol(symbol, **args)

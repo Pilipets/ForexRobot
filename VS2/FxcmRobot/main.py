@@ -26,5 +26,10 @@ if __name__ == '__main__':
     df = strategy.frame_client.df
 
     api : fxcmpy = bot.api
-    api.get_open_positions()
     data = api.get_open_positions()
+    temp = strategy._group_porfolio_positions()
+    portfolio.order_ids
+
+    
+    grouped = data.loc[(data['currency'].isin(portfolio.get_symbols())) & (data['orderId'].isin(portfolio.get_order_ids())),
+                       ['currency','isBuy', 'tradeId', 'orderId','amountK']]

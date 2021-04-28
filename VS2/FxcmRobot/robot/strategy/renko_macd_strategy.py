@@ -10,7 +10,8 @@ class RenkoMacdStrategy(BaseStrategy):
 
         self.close_args = dict(time_in_force='GTC', order_type='AtMarket')
         self.trade_pat = self.portfolio.create_trade_shortcut(
-            'rm_pat', is_in_pips=True, time_in_force='GTC', order_type='AtMarket')
+            'rm_pat', is_in_pips=False, time_in_force='GTC',
+            order_type='AtMarket', trailine_step=1)
 
     def _clean_positions(self):
         for symbol in self.symbols:
@@ -32,6 +33,7 @@ class RenkoMacdStrategy(BaseStrategy):
 
         client = FrameClient.from_df(df)
         client.macd()
+        client.atr()
         client.slope('macd')
         client.slope('macd_signal')
 
@@ -67,7 +69,6 @@ class RenkoMacdStrategy(BaseStrategy):
             try:
                 if not updated: continue
                 symbol = self.symbols[idx]
-                lot = self.portfolio.get_lot_size(symbol)
 
                 last_signal = None
                 if len(open_pos) > 0:
@@ -79,18 +80,24 @@ class RenkoMacdStrategy(BaseStrategy):
             
                 df = self.prepare_df(df)
                 self.logger.debug(f'Method update_trades called for {symbol} with {len(df)} items')
+                if df.empty: continue
+
+                stop = 1.5 * df['atr'][-1]
+                pos_amount = self.portfolio.get_lot_size(symbol)/stop
                 close, signal = self.trade_signal(df, last_signal)
             
                 if close:
                     robot.close_all_positions_for(symbol, self.portfolio, **self.close_args)
 
                 if signal == "Buy":
-                    trade = trade_pat.create_trade(symbol=symbol, is_buy=True, amount=lot)
-                    robot.execute_trade(trade, self.portfolio)
+                    trade = trade_pat.create_trade(symbol=symbol, is_buy=True,
+                                                   amount=pos_amount, stop=-stop)
+                    order_id = robot.open_trade(trade, self.portfolio)
 
                 elif signal == "Sell":
-                    trade = trade_pat.create_trade(symbol=symbol, is_buy=False, amount=lot)
-                    robot.execute_trade(trade, self.portfolio)
+                    trade = trade_pat.create_trade(symbol=symbol, is_buy=False,
+                                                   amount=pos_amount, stop=-stop)
+                    order_id = robot.open_trade(trade, self.portfolio)
 
             except Exception as ex:
                 self.logger.warning(f'Error encountered: {ex}')

@@ -2,8 +2,7 @@ from fxcmpy import fxcmpy
 from robot import FxRobot, FxConfig
 import pandas as pd
 
-from robot import RenkoMacdStrategy, BbandMacdStrategy
-import logging
+from robot import RenkoMacdStrategy
 
 if __name__ == '__main__':
     config = FxConfig.from_file("config/init_config.ini")
@@ -29,13 +28,3 @@ if __name__ == '__main__':
     api : fxcmpy = bot.api
     api.get_open_positions()
     data = api.get_open_positions()
-    
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter(
-            '%(asctime)s:%(funcName)s:%(lineno)d:%(levelname)s:%(message)s')
-    handler.setLevel(logging.ERROR)
-    handler.setFormatter(formatter)
-    logger = logging.getLogger('temp')
-    logger.setLevel(logging.ERROR)
-    logger.addHandler(handler)
-    logger.propagate = False

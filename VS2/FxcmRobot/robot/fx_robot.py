@@ -61,9 +61,11 @@ class FxRobot:
     def __getattr__(self, name):
         return getattr(self.api, name)
 
-    def execute_trade(self, trade : Trade, portfolio : Portfolio):
-        self.logger.info(f'Executing new trade for portfolio({portfolio.id}): {trade}')
-        return self.api.open_trade(**trade.get_fxcm_args())
+    def open_trade(self, trade : Trade, portfolio : Portfolio):
+        self.logger.info(f'Opening new trade for portfolio({portfolio.id}): {trade}')
+        id = self.api.open_trade(**trade.get_fxcm_args())
+        trade.set_id(id)
+        return id
 
     def close_all_positions_for(self, symbol, **args):
         self.logger.info(f'Closing all positions for {symbol} with args {args}')

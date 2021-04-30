@@ -14,7 +14,6 @@ class RenkoMacdStrategy(BaseStrategy):
             'rm_pat', is_in_pips=True, time_in_force='GTC',
             order_type='AtMarket', trailing_step=1)
 
-        self.temp = 0
         self.logger.debug(f'Added new trade shortcut in Portfolio({portfolio.id}): {self.trade_pat}')
 
     def _clean_positions(self):

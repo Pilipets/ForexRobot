@@ -2,9 +2,13 @@ from fxcmpy import fxcmpy
 from robot import FxRobot, FxConfig
 import pandas as pd
 
-from robot import RenkoMacdStrategy
+from robot.strategy import RenkoMacdStrategy
 
-if __name__ == '__main__':
+def log_method(*args):
+    print(args)
+    print('args finished')
+
+def renko_macd_test():
     config = FxConfig.from_file("config/init_config.ini")
 
     bot = FxRobot(config)
@@ -21,15 +25,29 @@ if __name__ == '__main__':
     )
 
     strategy.run()
-    
-
-    df = strategy.frame_client.df
 
     api : fxcmpy = bot.api
     data = api.get_open_positions()
-    temp = strategy._group_porfolio_positions()
-    portfolio.order_ids
-
     
-    grouped = data.loc[(data['currency'].isin(portfolio.get_symbols())) & (data['orderId'].isin(portfolio.get_order_ids())),
-                       ['currency','isBuy', 'tradeId', 'orderId','amountK']]
+    api.subscribe_data_model('Order', [log_method])
+
+from fxcmpy import fxcmpy
+from robot import FxRobot, FxConfig
+import pandas as pd
+from robot.strategy import GridStrategy
+
+config = FxConfig.from_file("config/init_config.ini")
+bot = FxRobot(config)
+strategy = GridStrategy(
+    robot = bot,
+    symbol= 'EUR/USD',
+    lower_price = 1.156,
+    upper_price = 1.5346,
+    grid_levels = 5,
+    grid_type = GridStrategy.SYMMETRIC_TYPE
+)
+
+strategy._init_grid()
+trade_price = bot.get_offers(['EUR/USD'], ['sell', 'buy'])
+data = api.get_offers()
+data2 = data[data['currency'].isin(['EUR/USD'])]

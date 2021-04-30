@@ -20,6 +20,9 @@ class Trade:
     def get_order_id(self):
         return self.order_id
 
+    def get_order_type(self):
+        return self.order_type
+
     def get_fxcm_args(self):
         args = self.__dict__; del args['order_id']
 

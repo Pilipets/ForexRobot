@@ -63,16 +63,27 @@ class FxRobot:
 
     def open_trade(self, trade : Trade, portfolio : Portfolio):
         self.logger.info(f'Opening new trade for portfolio({portfolio.id}): {trade}')
-        order = self.api.open_trade(**trade.get_fxcm_args())
-        self.temp = order
-        self.logger.info(f"Adding new trade({order.get_orderId()}) to the portfolio({portfolio.id})")
+
+        if trade.get_order_type() == "Entry":
+            order = self.api.create_entry_order(**trade.get_fxcm_args())
+        else:
+            order = self.api.open_trade(**trade.get_fxcm_args())
+
+        id = order.get_orderId()
+        self.logger.info(f"Adding new trade({id}) to the portfolio({portfolio.id})")
         portfolio.add_order(order)
+        return id
 
     def close_trade(self, position, portfolio : Portfolio, **close_args):
         currency, trade_id = position['currency'], position['tradeId']
         self.logger.info(f"Closing position({trade_id}) for currency({currency}) in the portfolio({portfolio.id}) with args {close_args}")
         self.api.close_trade(trade_id, **close_args)
 
-    def close_all_for_symbol(self, symbol, **args):
-        self.logger.info(f'Closing all positions for {symbol} with args {args}')
-        self.api.close_all_for_symbol(symbol, **args)
+    def get_offers(self, symbols = None, columns = None):
+        if symbols is None: symbols = 'all'
+        if columns is None: columns = 'all'
+        self.logger.info(f"Gathering offers({columns}) for {symbols} symbols")
+        data = self.api.get_offers()
+        if type(symbols) == list: data = data[data['currency'].isin(symbols)]
+        if type(columns) == list: data = data[columns]
+        return data

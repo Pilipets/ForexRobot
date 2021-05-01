@@ -40,8 +40,11 @@ class FxRobot:
         )
         return bars
 
-    def sleep_till_next_bar(self, last_timestamp, timedelta):
-        next_timestamp = last_timestamp.tz_localize('utc') + timedelta
+    def sleep_till_next_bar(self, last_timestamp : pd.Timestamp, timedelta : pd.Timedelta):
+        if last_timestamp.tzinfo is None: last_timestamp = last_timestamp.tz_localize('utc')
+        else: last_timestamp = last_timestamp.tz_convert('utc')
+
+        next_timestamp = last_timestamp + timedelta
         delta = (next_timestamp - pd.Timestamp.utcnow()).total_seconds()
 
         self.logger.debug(f'Sleeping till next data update for {delta} seconds')

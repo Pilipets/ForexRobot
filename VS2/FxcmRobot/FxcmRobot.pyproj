@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>9a2c5c8d-0126-4e4e-97f4-7082a37afc0f</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>main.py</StartupFile>
+    <StartupFile>tests\strategy\test_renko_macd.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -12,6 +12,9 @@
     <Name>FxcmRobot</Name>
     <RootNamespace>FxcmRobot</RootNamespace>
     <InterpreterId>Global|VisualStudio|Trading-env</InterpreterId>
+    <TestFramework>unittest</TestFramework>
+    <UnitTestPattern>test*.py</UnitTestPattern>
+    <UnitTestRootDirectory>.</UnitTestRootDirectory>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -46,19 +49,26 @@
     <Compile Include="robot\strategy\base_strategy.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="robot\strategy\bband_macd_strategy.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="robot\strategy\grid_strategy.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="robot\strategy\renko_macd_strategy.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="robot\strategy\vectorized_strategy.py" />
     <Compile Include="robot\strategy\__init__.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="robot\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="tests\strategy\test_renko_macd.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="tests\strategy\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="tests\__init__.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="__init__.py">
@@ -67,10 +77,12 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="config\" />
+    <Folder Include="tests\" />
     <Folder Include="robot\" />
     <Folder Include="robot\common\" />
     <Folder Include="robot\data_control\" />
     <Folder Include="robot\strategy\" />
+    <Folder Include="tests\strategy\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="config\init_config.ini" />

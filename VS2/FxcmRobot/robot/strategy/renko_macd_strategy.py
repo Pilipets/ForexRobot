@@ -1,33 +1,29 @@
-from .base_strategy import BaseStrategy
+from .vectorized_strategy import VectorizedStrategy, filter_dict
 from ..data_control import FrameClient
 from ..common import indicators, Trade, Portfolio, TradeShortcut
 import numpy as np
 import pandas as pd
 
-class RenkoMacdStrategy(BaseStrategy):
-    def __init__(self, robot, portfolio : Portfolio, **kwargs):
-        super().__init__(robot = robot, portfolio = portfolio, **kwargs)
-        self.logger.info(f'Configured {RenkoMacdStrategy.__name__} with porfolio({portfolio.id})\n')
+class RenkoMacdStrategy(VectorizedStrategy):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        args = filter_dict(locals(), 'self', 'kwargs')
+        self.logger.info(f'Configured {self.__class__.__name__} with {args}\n')
 
         self.close_args = dict(time_in_force='GTC', order_type='AtMarket')
         self.trade_pat = self.portfolio.create_trade_shortcut(
             'rm_pat', is_in_pips=True, time_in_force='GTC',
             order_type='AtMarket', trailing_step=1)
 
-        self.logger.debug(f'Added new trade shortcut in Portfolio({portfolio.id}): {self.trade_pat}')
+        self.logger.debug(f'Added new trade shortcut in Portfolio({self.portfolio.id}): {self.trade_pat}')
 
-    def _clean_positions(self):
+    def _clean_portfolio_positions(self):
         open_pos = self._group_porfolio_positions()
-        self.logger.debug('Closing {len(open_pos)} opened groups for portfolio({self.portfolio.id})')
+        self.logger.debug(f'Closing {len(open_pos)} opened groups for portfolio({self.portfolio.id})')
         for currency, group in open_pos:
             for idx, row in group[['tradeId', 'amountK']].iterrows():
                 self.robot.close_trade(dict(tradeId=id, currency=currency), self.portfolio, amount=row['amountK'], **self.close_args)
-
-    def run(self):
-        self.logger.info(f'Starting the {RenkoMacdStrategy.__name__} strategy\n')
-        super().run()
-        self.logger.info(f'Finishing the {RenkoMacdStrategy.__name__} strategy')
-        self._clean_positions()
 
     def _prepare_df(self, df):
         renko_df = indicators.RenkoDF(df) # df index is reset in the RenkoDF
@@ -65,6 +61,15 @@ class RenkoMacdStrategy(BaseStrategy):
         if close or signal: self.logger.info(f'Close[{close}], Signal[{signal}] found')
         return close, signal
 
+    def start_run(self):
+        self.logger.info(f'Starting the {RenkoMacdStrategy.__name__} strategy')
+        super().start_run()
+
+    def end_run(self):
+        self.logger.info(f'Finishing the {RenkoMacdStrategy.__name__} strategy')
+        self._clean_portfolio_positions()
+        super().end_run()
+
     def update_trades(self, df_updates):
         robot = self.robot
         trade_pat : TradeShortcut = self.trade_pat
@@ -79,7 +84,7 @@ class RenkoMacdStrategy(BaseStrategy):
                 
                 open_pos_cur = pd.DataFrame()
                 last_signal = None
-                if open_pos and symbol in open_pos.groups:
+                if symbol in open_pos.groups:
                     open_pos_cur = open_pos.get_group(symbol)
                     
                     if open_pos_cur['isBuy'].iloc[0] == True: last_signal = 'long'
@@ -95,7 +100,8 @@ class RenkoMacdStrategy(BaseStrategy):
 
                 if close:
                     for idx, row in open_pos_cur[['tradeId', 'amountK']].iterrows():
-                        robot.close_trade(dict(tradeId=row['tradeId'], currency=symbol), self.portfolio, amount=row['amountK'], **self.close_args)
+                        robot.close_trade(dict(tradeId=row['tradeId'], currency=symbol),
+                            self.portfolio, amount=row['amountK'], **self.close_args)
 
                 if signal == "Buy":
                     trade = trade_pat.create_trade(symbol=symbol, is_buy=True,

@@ -41,14 +41,15 @@ class FxRobot:
         return bars
 
     def sleep_till_next_bar(self, last_timestamp : pd.Timestamp, timedelta : pd.Timedelta):
-        if last_timestamp.tzinfo is None: last_timestamp = last_timestamp.tz_localize('utc')
+        if last_timestamp is None: last_timestamp = pd.Timestamp.utcnow()
+        elif last_timestamp.tzinfo is None: last_timestamp = last_timestamp.tz_localize('utc')
         else: last_timestamp = last_timestamp.tz_convert('utc')
 
         next_timestamp = last_timestamp + timedelta
         delta = (next_timestamp - pd.Timestamp.utcnow()).total_seconds()
 
         self.logger.debug(f'Sleeping till next data update for {delta} seconds')
-        time.sleep(max(0, delta))
+        time.sleep(max(0.1, delta))
 
     def get_api(self):
         return self.api
@@ -72,7 +73,8 @@ class FxRobot:
         else:
             order = self.api.open_trade(**trade.get_fxcm_args())
 
-        id = order.get_orderId()
+
+        id = order.get_orderId() if order else None
         self.logger.info(f"Adding new trade({id}) to the portfolio({portfolio.id})")
         portfolio.add_order(order)
         return id
@@ -84,9 +86,13 @@ class FxRobot:
 
     def get_offers(self, symbols = None, columns = None):
         if symbols is None: symbols = 'all'
+        elif type(symbols) == str: symbols = symbols.split(',')
         if columns is None: columns = 'all'
+        elif type(columns) == str: columns = columns.split(',')
+
         self.logger.info(f"Gathering offers({columns}) for {symbols} symbols")
         data = self.api.get_offers()
+
         if type(symbols) == list: data = data[data['currency'].isin(symbols)]
         if type(columns) == list: data = data[columns]
         return data

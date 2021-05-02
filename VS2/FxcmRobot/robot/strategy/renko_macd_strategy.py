@@ -11,7 +11,8 @@ class RenkoMacdStrategy(VectorizedStrategy):
         args = filter_dict(locals(), 'self', 'kwargs')
         self.logger.info(f'Configured {self.__class__.__name__} with {args}\n')
 
-        self.close_args = dict(time_in_force='GTC', order_type='AtMarket')
+        self.pos_amount = 10
+        self.close_args = dict(time_in_force='GTC', order_type='AtMarket', amount=self.pos_amount)
         self.trade_pat = self.portfolio.create_trade_shortcut(
             'rm_pat', is_in_pips=True, time_in_force='GTC',
             order_type='AtMarket', trailing_step=1)
@@ -22,8 +23,10 @@ class RenkoMacdStrategy(VectorizedStrategy):
         open_pos = self._group_porfolio_positions()
         self.logger.debug(f'Closing {len(open_pos)} opened groups for portfolio({self.portfolio.id})')
         for currency, group in open_pos:
-            for idx, row in group[['tradeId', 'amountK']].iterrows():
-                self.robot.close_trade(dict(tradeId=id, currency=currency), self.portfolio, amount=row['amountK'], **self.close_args)
+            for id in group['tradeId']:
+                self.robot.close_trade(
+                    dict(tradeId=int(id), currency=currency),
+                    self.portfolio, **self.close_args)
 
     def _prepare_df(self, df):
         renko_df = indicators.RenkoDF(df) # df index is reset in the RenkoDF
@@ -62,11 +65,11 @@ class RenkoMacdStrategy(VectorizedStrategy):
         return close, signal
 
     def start_run(self):
-        self.logger.info(f'Starting the {RenkoMacdStrategy.__name__} strategy')
+        self.logger.info(f'Starting the {self.__class__.__name__} strategy')
         super().start_run()
 
     def end_run(self):
-        self.logger.info(f'Finishing the {RenkoMacdStrategy.__name__} strategy')
+        self.logger.info(f'Finishing the {self.__class__.__name__} strategy')
         self._clean_portfolio_positions()
         super().end_run()
 
@@ -95,13 +98,14 @@ class RenkoMacdStrategy(VectorizedStrategy):
                 if df.empty: continue
 
                 stop = 8# 1.5 * df['atr'][-1]
-                pos_amount = 10#self.portfolio.get_lot_size(symbol)/stop
+                pos_amount = self.pos_amount #self.portfolio.get_lot_size(symbol)/stop
                 close, signal = self._trade_signal(df, last_signal)
 
                 if close:
-                    for idx, row in open_pos_cur[['tradeId', 'amountK']].iterrows():
-                        robot.close_trade(dict(tradeId=row['tradeId'], currency=symbol),
-                            self.portfolio, amount=row['amountK'], **self.close_args)
+                    for id in open_pos_cur['tradeId']:
+                        robot.close_trade(
+                            dict(tradeId=int(row[id]), currency=symbol),
+                            self.portfolio, **self.close_args)
 
                 if signal == "Buy":
                     trade = trade_pat.create_trade(symbol=symbol, is_buy=True,

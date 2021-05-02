@@ -22,15 +22,6 @@ class VectorizedStrategy(BaseStrategy):
         self.trigger_frame_size = trigger_frame_size
         self.init_bars_cnt = init_bars_cnt
 
-    def _group_porfolio_positions(self):
-        data = self.robot.get_open_positions()
-        if data.empty: return data.groupby([])
-
-        grouped = data.loc[(data['currency'].isin(self.portfolio.get_symbols()))
-                           & (data['orderId'].isin(self.portfolio.get_order_ids())),
-                           ['currency','isBuy', 'tradeId', 'orderId','amountK']]
-        return grouped.groupby(['currency'])
-
     def start_run(self):
         if not self.init_bars_cnt: return
 
@@ -56,9 +47,8 @@ class VectorizedStrategy(BaseStrategy):
                 data = robot.get_last_bar(symbol, period = self.bars_period, n = self.update_bars_cnt)
                 if data.empty: continue
 
-                print(data.index[-1])
                 if last_bar_time is None: last_bar_time = data.index[-1]
-                else: last_bar_time = min(last_bar_time, data.index[-1])
+                else: last_bar_time = max(last_bar_time, data.index[-1])
 
                 client = self.frame_clients[idx]
                 if client.add_rows(data):
@@ -75,7 +65,7 @@ class VectorizedStrategy(BaseStrategy):
         self.update_trades(df_updates)
 
         if last_bar_time is None:
-            last_bar_time = pd.Timestamp.utcnow() - self.update_period
+            last_bar_time = pd.Timestamp.utcnow()
 
         robot.sleep_till_next_bar(last_bar_time, self.update_period)
         self.logger.info('\n')

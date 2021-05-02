@@ -1,99 +1,125 @@
 from enum import Enum
 
-from .base_strategy import BaseStrategy
+from .base_strategy import BaseStrategy, filter_dict
 from .. import FxRobot
+from itertools import chain
+import pandas as pd
 
 class GridStrategy(BaseStrategy):
-    class GridType(Enum):
-        SYMMETRIC = 0
-        BUY = 1
-        SELL = 2
-    SYMMETRIC_TYPE = GridType.SYMMETRIC
-    BUY_TYPE = GridType.BUY
-    SELL_TYPE = GridType.SELL
-
-    def __init__(self, lower_price = 0.0, upper_price = 0.0,
-                 grid_levels = 5, moving_grid = False,
-                 grid_type : GridType = SYMMETRIC_TYPE, **kwargs):
+    def __init__(self, update_period : pd.Timedelta = None,
+                 lower_price = None, upper_price = None,
+                 pos_amount = None, interval_price = None,
+                 base_price = None, grid_levels = 5, moving_grid = False,
+                 **kwargs):
         super().__init__(**kwargs)
 
-        args = locals(); del args['self']; del args['kwargs']
-        self.logger.info(f'Configured {GridStrategy.__name__} with {args}')
+        self.symbol = next(iter(self.portfolio.get_symbols()))
+        self.robot.subscribe_instrument(self.symbol)
 
-        self.symbol = self.portfolio.get_symbols()[0]
-
-        self.type = grid_type
-        self.levels = grid_levels
         self.lower_price = lower_price
         self.upper_price = upper_price
+        self.levels = grid_levels + 1
 
-        self.robot.subscribe_instrument(self.symbol)
-        self.interval_price = (upper_price-lower_price) / grid_levels
-        self.grid = [None] * (grid_levels + 1) # n levels but n + 1 orders
+        if pos_amount is None: pos_amount = 10
+        self.pos_amount = pos_amount
+
+        if update_period is None: update_period = pd.Timedelta(10, 'sec')
+        self.update_period = update_period
+
+        if upper_price and lower_price:
+            if interval_price is None:
+                interval_price = (upper_price-lower_price) / grid_levels
+            if not moving_grid and base_price is None:
+                base_price = interval_price * (self.levels // 2) + lower_price
+
+        args = filter_dict(locals(), 'self', 'kwargs')
+        self.logger.info(f'Configured {self.__class__.__name__} with {args}\n')
+
+        self.interval_price = interval_price
+        self.base_price = base_price
+        self.grid = [None] * self.levels
 
         self.trade_pat = self.portfolio.create_trade_shortcut(
-            'grid_pat', is_in_pips=True, time_in_force='GTC', order_type='Entry')
+            'grid_pat', symbol = self.symbol, is_in_pips=True,
+            time_in_force='GTC', order_type='Entry')
 
-        self.logger.debug(f'Added new trade shortcut in Portfolio({portfolio.id}): {self.trade_pat}')
+        self.logger.debug(f'Added new trade shortcut in Portfolio({self.portfolio.id}): {self.trade_pat}')
 
-    def __del__(self):
-        self.robot.unsubscribe_instrument(self.symbol)
+    def _fill_level(self, level, is_buy):
+        robot : FxRobot = self.robot
+
+        if 0 <= level <= self.levels and self.grid[level] is None:
+            price = self.base_price  + self.interval_price * (level - self.levels // 2)
+
+            try:
+                trade = self.trade_pat.create_trade(
+                    is_buy=is_buy, rate=price, amount=self.pos_amount)
+        
+                self.grid[level] = robot.open_trade(trade, self.portfolio)
+
+            except Exception as ex:
+                self.logger.warning(f'Exception received when filling the level({level}): {ex}')
+                self.grid[level] = None
 
     def start_run(self):
-        robot : FxRobot = self.robot
-        pos_amount = 10
+        self.logger.info(f'Starting the {self.__class__.__name__} strategy')
+        if self.base_price is None:
+            self.base_price = self.robot.get_offers(self.symbol, 'buy')['buy'].iloc[0]
+        if self.interval_price is None:
+            # Use ATR or BoolingerBands to deduce the interval_price
+            pass
 
-        price = self.lower_price
-        for i in range(len(self.grid)):
-            ask_price = robot.get_offers([self.symbol], ['buy'])['buy']
+        self.last_level = self.levels // 2
 
-            if  price < ask_price:
-                trade = self.trade_pat.create_trade(
-                    symbol=self.symbol, is_buy=True,
-                    limit=price, amount=pos_amount)
-                id = robot.open_trade(trade, portfolio)
-            else:
-                trade = self.trade_pat.create_trade(
-                    symbol=self.symbol, is_buy=False,
-                    limit=price, amount=pos_amount)
-                id = robot.open_trade(trade, portfolio)
-
-            self.grid[i] = id
-            price += self.interval_price
+        # Half buy, half sell
+        for level in range(self.last_level - 1, -1, -1):
+            self._fill_level(level, is_buy=True)
+        for level in range(self.last_level + 1, len(self.grid)):
+            self._fill_level(level, is_buy=False)
 
     def iter_run(self):
-        pos_amount = 10
+        robot : FxRobot = self.robot
         
-        for idx, id in enumerate(self.grid):
-            order = robot.get_order(id) if id else None
-            status = order.get_status() if order else None
+        #open_pos = self._group_porfolio_positions()
+        #open_pos = open_pos.get_group(self.symbol)
+        grid = self.grid
 
-            if status == "Executed":
+        for level in chain(range(self.last_level + 1, len(grid)), range(self.last_level - 1, -1, -1)):
+            order = robot.get_order(grid[level]) if grid[level] else None
+
+            if not order or order.get_status() == "Canceled":
                 grid[idx] = None
-                side = "Buy" if order.get_isBuy() else "Sell"
-                msg = f'{side} order({id}) completed, setting new '
+                if idx > self.last_level: self._fill_level(level, is_buy=False)
+                elif idx < self.last_level: self._fill_level(level, is_buy=True)
 
-                old_price = order.get_limit()
+            elif order.get_status() == "Executed":
+                self.last_level = level
+                grid[idx] = None
+
+                offer_price = robot.get_offers(self.symbol, ['sell', 'buy']).iloc[0]
                 if order.get_isBuy():
-                    new_price = old_price + self.interval_price
-                    trade = self.trade_pat.create_trade(
-                        symbol=self.symbol, is_buy=False,
-                        limit=new_price, amount=pos_amount
-                    )
-                    msg += 'Sell order'
-
+                    if order.get_buy() < offer_price['sell']: self._fill_level(level+1, is_buy=False)
+                    else: self._fill_level(level, is_buy=True)
                 else:
-                    new_price = old_price - self.interval_price
-                    trade = self.trade_pat.create_trade(
-                        symbol=self.symbol, is_buy=True,
-                        limit=new_price, amount=pos_amount
-                    )
-                    msg += 'Buy order'
+                    if order.get_sell() > offer_price['buy']: self._fill_level(level-1, is_buy=True)
+                    else: self._fill_level(level, is_buy=False)
 
-                id = robot.open_trade(trade, portfolio)
-                grid[idx] = id
+        self.robot.sleep_till_next_bar(None, self.update_period)
 
-                self.logger.info(msg)
+    def end_run(self):
+        self.logger.info(f'Finishing the {self.__class__.__name__} strategy')
+        self.logger.info(f'Closing {len([x for x in self.grid if x])} orders')
 
-            elif status == "Canceled" or status is None:
-                pass
+        for i, id in enumerate(self.grid):
+            try:
+                if not id: continue
+                order = self.robot.get_order(id)
+                self.logger.info(f'Closing order({id}) with status({order.get_status()})')
+                if order.get_status() != 'Executed':
+                    order.delete()
+                else:
+                    position = order.get_associated_trade()
+                    position.close()
+                self.grid[i] = None
+            except Exception as ex:
+                print(f'Exception received: {ex}')

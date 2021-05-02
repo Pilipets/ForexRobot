@@ -22,6 +22,15 @@ class BaseStrategy:
         self.portfolio = portfolio
         self.run_for = run_for
 
+    def _group_porfolio_positions(self):
+        data = self.robot.get_open_positions()
+        if data.empty: return data.groupby([])
+
+        grouped = data.loc[(data['currency'].isin(self.portfolio.get_symbols()))
+                           & (data['orderId'].isin(self.portfolio.get_order_ids())),
+                           ['currency', 'isBuy', 'tradeId', 'orderId','amountK']]
+        return grouped.groupby(['currency'])
+
     def start_run(self):
         pass
 

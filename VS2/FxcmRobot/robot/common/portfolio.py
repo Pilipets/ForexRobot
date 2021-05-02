@@ -29,7 +29,8 @@ class Portfolio:
         self.order_ids = set()
 
     def add_order(self, order):
-        self.order_ids.add(str(order.get_orderId()))
+        if order:
+            self.order_ids.add(str(order.get_orderId()))
 
     def get_lot_size(self, symbol):
         return self.lot_sizes.get(symbol, None)

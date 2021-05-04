@@ -63,6 +63,8 @@ class GridStrategy(BaseStrategy):
 
     def start_run(self):
         self.logger.info(f'Starting the {self.__class__.__name__} strategy')
+        super().start_run()
+
         if self.base_price is None:
             self.base_price = self.robot.get_offers(self.symbol, 'buy')['buy'].iloc[0]
         if self.interval_price is None:
@@ -88,13 +90,13 @@ class GridStrategy(BaseStrategy):
             order = robot.get_order(grid[level]) if grid[level] else None
 
             if not order or order.get_status() == "Canceled":
-                grid[idx] = None
-                if idx > self.last_level: self._fill_level(level, is_buy=False)
-                elif idx < self.last_level: self._fill_level(level, is_buy=True)
+                grid[level] = None
+                if level > self.last_level: self._fill_level(level, is_buy=False)
+                elif level < self.last_level: self._fill_level(level, is_buy=True)
 
             elif order.get_status() == "Executed":
                 self.last_level = level
-                grid[idx] = None
+                grid[level] = None
 
                 offer_price = robot.get_offers(self.symbol, ['sell', 'buy']).iloc[0]
                 if order.get_isBuy():
@@ -108,18 +110,29 @@ class GridStrategy(BaseStrategy):
 
     def end_run(self):
         self.logger.info(f'Finishing the {self.__class__.__name__} strategy')
+
+        self._clean_portfolio_positions()
+        super().end_run()
         self.logger.info(f'Closing {len([x for x in self.grid if x])} orders')
 
-        for i, id in enumerate(self.grid):
-            try:
-                if not id: continue
-                order = self.robot.get_order(id)
-                self.logger.info(f'Closing order({id}) with status({order.get_status()})')
-                if order.get_status() != 'Executed':
-                    order.delete()
-                else:
-                    position = order.get_associated_trade()
-                    position.close()
-                self.grid[i] = None
-            except Exception as ex:
-                print(f'Exception received: {ex}')
+        for level in range(len(self.grid)):
+            for i in range(3): # 3 attempts
+                try:
+                    if not self.grid[level]: break
+                    id = self.grid[level]
+                    self.logger.info(f'Closing order({id}) with status({order.get_status()})')
+
+                    order = self.robot.get_order(id)
+                    try:
+                        if order.get_status() != 'Canceled': order.delete()
+                    except Exception as ex:
+                        print(f'Exception received: {ex}')
+
+                        position = order.get_associated_trade()
+                        if position: position.close()
+                        else: print('Order({id} positions not found')
+
+                    self.grid[level] = None
+
+                except Exception as ex:
+                    print(f'Exception received: {ex}')

@@ -29,7 +29,10 @@
     <Compile Include="robot\common\indicators.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="robot\common\portfolio.py" />
+    <Compile Include="robot\common\base_portfolio.py" />
+    <Compile Include="robot\common\stats_portfolio.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="robot\common\trade.py">
       <SubType>Code</SubType>
     </Compile>
@@ -62,6 +65,13 @@
     <Compile Include="robot\__init__.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="tests\fxcmpy\status_bug.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="tests\fxcmpy\__init__,py.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="tests\strategy\test_grid.py" />
     <Compile Include="tests\strategy\test_renko_macd.py">
       <SubType>Code</SubType>
     </Compile>
@@ -82,6 +92,7 @@
     <Folder Include="robot\common\" />
     <Folder Include="robot\data_control\" />
     <Folder Include="robot\strategy\" />
+    <Folder Include="tests\fxcmpy\" />
     <Folder Include="tests\strategy\" />
   </ItemGroup>
   <ItemGroup>

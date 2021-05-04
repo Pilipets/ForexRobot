@@ -16,21 +16,23 @@ class TradeShortcut(dict):
         return f'{TradeShortcut.__name__}[{self.id}]({super().__repr__()})'
 
 
-class Portfolio:
-    def __init__(self, symbols, pile_size, risk_rate = 0.03, coefs = None):
+class BasePortfolio:
+    def __init__(self, robot, symbols, pile_size, risk_rate = 0.03, coefs = None):
+        self.robot = robot
         self.symbols = set(symbols)
         if not coefs: coefs = [1/len(symbols) for _ in range(len(symbols))]
 
         self.risk_rate = risk_rate
         self.pile_sizes = {sym : pile_size * coefs[i] for i, sym in enumerate(symbols)}
         self.lot_sizes = {sym : int(pile_size * self.risk_rate) for sym in symbols}
+        self.__dict__['id'] = self.id
 
         self.trade_shortcuts = {}
-        self.order_ids = set()
+        self.order_ids = set() 
 
     def add_order(self, order):
-        if order:
-            self.order_ids.add(str(order.get_orderId()))
+        # We need strings for group portfolio positions method
+        if order: self.order_ids.add(str(order.get_orderId()))
 
     def get_lot_size(self, symbol):
         return self.lot_sizes.get(symbol, None)
@@ -56,7 +58,7 @@ class Portfolio:
     def __repr__(self):
         args = self.__dict__
         args['id'] = self.id
-        return f'{Portfolio.__name__}({args})'
+        return f'{self.__class__.__name__}({args})'
 
     @property
     def id(self):

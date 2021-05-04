@@ -19,15 +19,6 @@ class RenkoMacdStrategy(VectorizedStrategy):
 
         self.logger.debug(f'Added new trade shortcut in Portfolio({self.portfolio.id}): {self.trade_pat}')
 
-    def _clean_portfolio_positions(self):
-        open_pos = self._group_porfolio_positions()
-        self.logger.debug(f'Closing {len(open_pos)} opened groups for portfolio({self.portfolio.id})')
-        for currency, group in open_pos:
-            for id in group['tradeId']:
-                self.robot.close_trade(
-                    dict(tradeId=int(id), currency=currency),
-                    self.portfolio, **self.close_args)
-
     def _prepare_df(self, df):
         renko_df = indicators.RenkoDF(df) # df index is reset in the RenkoDF
         df = df.merge(renko_df.loc[:,["date", "bar_num"]], how="outer", on="date")
@@ -103,9 +94,8 @@ class RenkoMacdStrategy(VectorizedStrategy):
 
                 if close:
                     for id in open_pos_cur['tradeId']:
-                        robot.close_trade(
-                            dict(tradeId=int(row[id]), currency=symbol),
-                            self.portfolio, **self.close_args)
+                        robot.close_trade(dict(tradeId=int(row[id]), currency=symbol),
+                                          self.portfolio, **self.close_args)
 
                 if signal == "Buy":
                     trade = trade_pat.create_trade(symbol=symbol, is_buy=True,

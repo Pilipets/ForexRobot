@@ -58,7 +58,7 @@ class FxRobot:
         return self.logger
 
     def create_portfolio(self, symbols, pile_size, **kwargs):
-        portfolio = Portfolio(symbols, pile_size, **kwargs)
+        portfolio = Portfolio(self, symbols, pile_size, **kwargs)
         self.logger.info(f'Created new portfolio object with id({portfolio.id}): {portfolio}')
         return portfolio
 

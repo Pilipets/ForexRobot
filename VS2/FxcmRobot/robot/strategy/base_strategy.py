@@ -1,6 +1,7 @@
 import time
 import pandas as pd
 
+from fxcmpy import fxcmpy_open_position
 from .. import FxRobot
 from ..common import Portfolio
 
@@ -31,6 +32,23 @@ class BaseStrategy:
                            ['currency', 'isBuy', 'tradeId', 'orderId','amountK']]
         return grouped.groupby(['currency'])
 
+    def _clean_portfolio_positions(self, attempts=3):
+        ids = self.portfolio.get_order_ids()
+        self.logger.info(f'Cleaning {len(ids)} portfolio({self.portfolio.id}) orders with {attempts} attempts')
+        for id in self.portfolio.get_order_ids():
+            for _ in range(attempts):
+                try:
+                    id = int(id)
+                    order = self.robot.get_order(id)
+                    self.logger.info("Closing order({id}) with status({order.get_status()})")
+                    order.delete()
+
+                except Exception as ex:
+                    self.logger.warning(f'Exception received: {ex}')
+
+                else:
+                    break
+
     def start_run(self):
         pass
 
@@ -38,7 +56,7 @@ class BaseStrategy:
         pass
 
     def end_run(self):
-        pass
+        self._clean_portfolio_positions()
 
     def run(self):
         self.start_run()

@@ -14,7 +14,7 @@ def test_grid():
         run_for = pd.Timedelta(15, unit='min'),
         lower_price = 1.156,
         upper_price = 1.5346,
-        grid_levels = 3,
+        grid_levels = 5,
         moving_grid=True,
         update_period = pd.Timedelta(90, unit='sec')
     )

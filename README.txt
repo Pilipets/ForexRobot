@@ -1,13 +1,14 @@
 TODO:
 
 Major:
-1. Add Fibonacci retracement strategies;
-2. Add strategy backtesting;
-3. Add hosting for strategies;
-4. Add run until opened option;
-5. Add console running options with configs;
-6. Modify portolio to get stats for individual symbols;
-7. Resolve the mess with str in BasePortfolio.order_ids, while somewhere int expected, somewhere - str;
+1. Add BBandMACD strategy - https://github.com/tanvird3/TradingRobot;
+2. Rethink vectorized strategy and portfolio - maybe for one symbol and async loop?
+3. Add strategy backtesting - https://kernc.github.io/backtesting.py/;
+4. Add hosting for strategies; (AWS, EC2)
+5. Add run until opened option;
+6. Add console running options with configs;
+7. Add Fibonacci retracement strategies;
+8. Resolve the mess with str in BasePortfolio.order_ids, while somewhere int expected, somewhere - str;
 
 RenkoMACD:
 1. Add stop_loss based on ATR, position size calculation based on the risk amount;

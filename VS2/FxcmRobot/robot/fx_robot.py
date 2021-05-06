@@ -73,7 +73,6 @@ class FxRobot:
         else:
             order = self.api.open_trade(**trade.get_fxcm_args())
 
-
         id = order.get_orderId() if order else None
         self.logger.info(f"Adding new trade({id}) to the portfolio({portfolio.id})")
         portfolio.add_order(order)

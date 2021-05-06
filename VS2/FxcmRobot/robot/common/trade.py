@@ -1,3 +1,5 @@
+import copy
+
 class Trade:
     def __init__(self, symbol=None, amount=None,
                  is_buy=False, is_in_pips=True,
@@ -26,7 +28,7 @@ class Trade:
         return self.order_type
 
     def get_fxcm_args(self):
-        args = self.__dict__; del args['order_id']
+        args = copy.copy(self.__dict__)
 
         # Modifying names
         for x, y in [('session', 'time_in_force')]:

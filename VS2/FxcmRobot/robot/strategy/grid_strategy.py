@@ -72,6 +72,7 @@ class GridStrategy(BaseStrategy):
             pass
 
         self.last_level = self.levels // 2
+        self.grid = [None] * self.levels
 
         # Half buy, half sell
         for level in range(self.last_level - 1, -1, -1):
@@ -81,11 +82,9 @@ class GridStrategy(BaseStrategy):
 
     def iter_run(self):
         robot : FxRobot = self.robot
-        
-        #open_pos = self._group_porfolio_positions()
-        #open_pos = open_pos.get_group(self.symbol)
         grid = self.grid
 
+        # https://github.com/fxcm/RestAPI/issues/138
         for level in chain(range(self.last_level + 1, len(grid)), range(self.last_level - 1, -1, -1)):
             order = robot.get_order(grid[level]) if grid[level] else None
 
@@ -110,29 +109,4 @@ class GridStrategy(BaseStrategy):
 
     def end_run(self):
         self.logger.info(f'Finishing the {self.__class__.__name__} strategy')
-
-        self._clean_portfolio_positions()
         super().end_run()
-        self.logger.info(f'Closing {len([x for x in self.grid if x])} orders')
-
-        for level in range(len(self.grid)):
-            for i in range(3): # 3 attempts
-                try:
-                    if not self.grid[level]: break
-                    id = self.grid[level]
-                    self.logger.info(f'Closing order({id}) with status({order.get_status()})')
-
-                    order = self.robot.get_order(id)
-                    try:
-                        if order.get_status() != 'Canceled': order.delete()
-                    except Exception as ex:
-                        print(f'Exception received: {ex}')
-
-                        position = order.get_associated_trade()
-                        if position: position.close()
-                        else: print('Order({id} positions not found')
-
-                    self.grid[level] = None
-
-                except Exception as ex:
-                    print(f'Exception received: {ex}')

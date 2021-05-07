@@ -19,7 +19,7 @@ class RenkoMacdStrategy(VectorizedStrategy):
 
         self.logger.debug(f'Added new trade shortcut in Portfolio({self.portfolio.id}): {self.trade_pat}')
 
-    def _prepare_df(self, df):
+    def prepare_df(self, df):
         renko_df = indicators.RenkoDF(df) # df index is reset in the RenkoDF
         df = df.merge(renko_df.loc[:,["date", "bar_num"]], how="outer", on="date")
 
@@ -34,7 +34,7 @@ class RenkoMacdStrategy(VectorizedStrategy):
 
         return client.get_df().dropna()
 
-    def _trade_signal(self, df, last_signal):
+    def trade_signal(self, df, last_signal):
         close, signal = False, None
         bar_num = df["bar_num"][-1]
         crossover = (np.sign(df["macd"][-1] - df["macd_signal"][-1]) +
@@ -54,58 +54,3 @@ class RenkoMacdStrategy(VectorizedStrategy):
 
         if close or signal: self.logger.info(f'Close[{close}], Signal[{signal}] found')
         return close, signal
-
-    def start_run(self):
-        self.logger.info(f'Starting the {self.__class__.__name__} strategy')
-        super().start_run()
-
-    def end_run(self):
-        self.logger.info(f'Finishing the {self.__class__.__name__} strategy')
-        self._clean_portfolio_positions()
-        super().end_run()
-
-    def update_trades(self, df_updates):
-        robot = self.robot
-        trade_pat : TradeShortcut = self.trade_pat
-
-        if not any(updated for _, updated in df_updates): return
-
-        open_pos = self._group_porfolio_positions()
-        for idx, (df, updated) in enumerate(df_updates):
-            try:
-                if not updated: continue
-                symbol = self.symbols[idx]
-                
-                open_pos_cur = pd.DataFrame()
-                last_signal = None
-                if symbol in open_pos.groups:
-                    open_pos_cur = open_pos.get_group(symbol)
-                    
-                    if open_pos_cur['isBuy'].iloc[0] == True: last_signal = 'long'
-                    else: last_signal = 'short'
-
-                df = self._prepare_df(df)
-                self.logger.debug(f'Method update_trades called for {symbol} with {len(df)} items')
-                if df.empty: continue
-
-                stop = 8# 1.5 * df['atr'][-1]
-                pos_amount = self.pos_amount #self.portfolio.get_lot_size(symbol)/stop
-                close, signal = self._trade_signal(df, last_signal)
-
-                if close:
-                    for id in open_pos_cur['tradeId']:
-                        robot.close_trade(dict(tradeId=int(row[id]), currency=symbol),
-                                          self.portfolio, **self.close_args)
-
-                if signal == "Buy":
-                    trade = trade_pat.create_trade(symbol=symbol, is_buy=True,
-                                                   amount=pos_amount, stop=-stop)
-                    robot.open_trade(trade, self.portfolio)
-
-                elif signal == "Sell":
-                    trade = trade_pat.create_trade(symbol=symbol, is_buy=False,
-                                                   amount=pos_amount, stop=-stop)
-                    robot.open_trade(trade, self.portfolio)
-
-            except Exception as ex:
-                self.logger.warning(f'Error encountered: {ex}')

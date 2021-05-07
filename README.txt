@@ -3,6 +3,7 @@ TODO:
 Major:
 1. Add BBandMACD strategy - https://github.com/tanvird3/TradingRobot;
 2. Rethink vectorized strategy and portfolio - maybe for one symbol and async loop?
+Rethink pos_size;
 3. Add strategy backtesting - https://kernc.github.io/backtesting.py/;
 4. Add hosting for strategies; (AWS, EC2)
 5. Add run until opened option;

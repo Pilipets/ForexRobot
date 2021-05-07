@@ -20,11 +20,11 @@ def MACD(df, fast = 12, slow = 26, macd_period = 9):
     df.drop(['macd_fast', 'macd_slow'], axis=1, inplace=True)
     return df
 
-def BollingerBands(df, period = 20, std = 2):
+def BollingerBands(df, period = 20, up_std = 2, dn_std = 2):
     df["bbands_ma"] = df['close'].rolling(period).mean()
     df["bbands_std"] = df["bbands_ma"].rolling(period).std()
-    df["bbands_up"] = df["bbands_ma"] + std * df["bbands_std"]
-    df["bbands_dn"] = df["bbands_ma"] - std * df["bbands_std"]
+    df["bbands_up"] = df["bbands_ma"] + up_std * df["bbands_std"]
+    df["bbands_dn"] = df["bbands_ma"] - dn_std * df["bbands_std"]
     df["bbands_percent"] = (df['close'] - df['bbands_dn']) / (df['bbands_up'] - df['bbands_dn'])
     
     df.drop(['bbands_ma', 'bbands_std', 'bbands_up', 'bbands_dn'], axis=1, inplace=True)

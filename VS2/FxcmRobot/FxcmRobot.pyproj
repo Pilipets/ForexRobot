@@ -52,7 +52,7 @@
     <Compile Include="robot\strategy\base_strategy.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="robot\strategy\bbank_macd.py">
+    <Compile Include="robot\strategy\bband_macd.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="robot\strategy\grid_strategy.py">

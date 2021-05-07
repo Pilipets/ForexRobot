@@ -1,5 +1,5 @@
 import pandas as pd
-from collections import defaultdict
+from collections import OrderedDict
 
 from ..common import indicators
 
@@ -8,7 +8,7 @@ class FrameClient:
         self.df = pd.DataFrame()
 
         self.max_size = max_size
-        self.indicators = {}
+        self.indicators = OrderedDict()
 
     @staticmethod
     def from_df(df):
@@ -22,10 +22,7 @@ class FrameClient:
     def _save_indicator(self, name, func, args):
         del args['self']
 
-        self.indicators[name] = {}
-        self.indicators[name]['args'] = args
-        self.indicators[name]['func'] = func
-
+        self.indicators[name] = {'args': args, 'func': func}
         return not self.df.empty
 
     def macd(self, fast = 12, slow = 26, macd_period = 9, name = 'macd'):
@@ -36,12 +33,12 @@ class FrameClient:
         if not self._save_indicator(name, self.atr, locals()): return
         self.df = indicators.ATR(self.df, period = period)
 
-    def bbands(self, period = 20, std = 2, name = 'bbands'):
+    def bbands(self, period = 20, up_std = 2, dn_std = 2, name = 'bbands'):
         if not self._save_indicator(name, self.bbands, locals()): return
-        self.df = indicators.BollingerBands(self.df, period = period, std = std)
+        self.df = indicators.BollingerBands(self.df, period = period, up_std = up_std, dn_std = dn_std)
 
-    def slope(self, col_name, num = 5):
-        if self.df.empty: return
+    def slope(self, col_name, num = 5, name= 'slope'):
+        if not self._save_indicator(name, self.slope, locals()): return
         self.df[f'{col_name}_slope'] = indicators.slope(self.df.loc[:, col_name], num)
 
     def update(self):

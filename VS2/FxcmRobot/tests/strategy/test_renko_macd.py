@@ -8,7 +8,8 @@ def test_renko_macd():
     config = FxConfig.from_file("config/init_config.ini")
 
     bot = FxRobot(config)
-    portfolio = bot.create_portfolio(['EUR/USD', 'GBP/CAD'], 1500)
+    portfolio = bot.create_portfolio(['EUR/USD', 'GBP/CAD'],
+                                     {'EUR/USD' : 15, 'GBP/CAD' : 12})
 
     strategy = RenkoMacdStrategy(
         robot = bot,

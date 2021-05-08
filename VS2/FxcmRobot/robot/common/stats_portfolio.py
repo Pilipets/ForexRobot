@@ -13,7 +13,7 @@ class StatsPortfolio(BasePortfolio):
 
     def get_closed_positions(self):
         pos = self.robot.get_closed_positions()
-        return pos[pos['OpenOrderID'].isin(self.order_ids)]
+        return pos[pos['OpenOrderID'].isin(self.order_ids)] if not pos.empty else pos
         
     def get_stats(self, granularity = 1):
         pos = self.get_closed_positions()
@@ -33,7 +33,7 @@ class StatsPortfolio(BasePortfolio):
 
         print('STRATEGY PERFORMANCE'.center(40, '*'))
         print('-'*40)
-        print('Maximum drawdown', round(self.max_drawdown(pos, 'cumProfit') * 100, 2), '% \n')
+        print('Maximum drawdown', round(self.max_drawdown(pos, 'cumProfit') * 100, 2) if not pos.empty else 0, '% \n')
 
         print('Number of trades/profits/losses:', trades_cnt, '/', len(profits), '/', len(losses))
         print('Win/loss ratio:', round(len(profits) / max(len(losses), 1), 2))

@@ -17,23 +17,33 @@ class BBandMacdStrategy(VectorizedStrategy):
             client.slope('macd')
             client.slope('macd_signal')
 
-        self.pos_amount = 10
-        self.close_args = dict(time_in_force='GTC', order_type='AtMarket', amount=self.pos_amount)
         self.trade_pat = self.portfolio.create_trade_shortcut(
-            'rm_pat', is_in_pips=True, time_in_force='GTC',
+            'bbm_open', is_in_pips=True, time_in_force='GTC',
             order_type='AtMarket', trailing_step=1)
+
+        self.close_args = self.portfolio.create_trade_shortcut(
+            'bbm_close', time_in_force='GTC', order_type='AtMarket')
 
         self.logger.debug(f'Added new trade shortcut in Portfolio({self.portfolio.id}): {self.trade_pat}')
 
-    def trade_signal(self, df, last_signal):
-        if last_signal: return False, None
-        signal = None
+    def trade_signal(self, symbol, df, last_signal):
+        if last_signal: return None, None
 
+        is_buy = None
         crossover = (np.sign(df["macd"][-1] - df["macd_signal"][-1]) +
-            np.sign(df["macd_slope"][-1] - df["macd_signal_slope"][-1]))
+                     np.sign(df["macd_slope"][-1] - df["macd_signal_slope"][-1]))
 
-        if df['bbands_percent'] <= 0.6 and crossover == 2: signal = "Buy"
-        elif df['bbands_percent'] >= 0.4 and crossover == -2: signal == "Sell"
+        if df['bbands_percent'] <= 0.6 and crossover == 2: is_buy = True
+        elif df['bbands_percent'] >= 0.4 and crossover == -2: is_buy = False
 
-        if signal: self.logger.info(f'Signal[{signal}] found')
-        return signal
+        if is_buy:
+            self.logger.info(f'Signal[{"Buy" if is_buy else "Sell"}] found')
+
+            amount = self.portfolio.get_lot_size(symbol)
+            # TODO: Use ATR here
+            trade = self.trade_pat.create_trade(
+                symbol=symbol, is_buy=is_buy,amount=pos_amount, stop=-10, limit=20)
+        else:
+            trade = None
+
+        return None, trade

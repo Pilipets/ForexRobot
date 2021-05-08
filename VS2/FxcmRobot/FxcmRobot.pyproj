@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>9a2c5c8d-0126-4e4e-97f4-7082a37afc0f</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>tests\strategy\test_renko_macd.py</StartupFile>
+    <StartupFile>main.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -68,6 +68,9 @@
     <Compile Include="robot\__init__.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="tests\common\test_portfolio.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="tests\fxcmpy\status_bug.py">
       <SubType>Code</SubType>
     </Compile>
@@ -96,6 +99,7 @@
     <Folder Include="robot\data_control\" />
     <Folder Include="robot\strategy\" />
     <Folder Include="tests\fxcmpy\" />
+    <Folder Include="tests\common\" />
     <Folder Include="tests\strategy\" />
   </ItemGroup>
   <ItemGroup>

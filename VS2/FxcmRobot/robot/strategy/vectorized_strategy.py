@@ -73,7 +73,7 @@ class VectorizedStrategy(BaseStrategy):
         robot.sleep_till_next_bar(last_bar_time, self.update_period)
         self.logger.info('\n')
 
-    def trade_signal(self, df, last_signal):
+    def trade_signal(self, symbol, df, last_signal):
         return False, None
 
     def prepare_df(self, df):
@@ -103,23 +103,14 @@ class VectorizedStrategy(BaseStrategy):
                 self.logger.debug(f'Method update_trades called for {symbol} with {len(df)} items')
                 if df.empty: continue
 
-                close, signal = self.trade_signal(df, last_signal)
-                stop = 8# 1.5 * df['atr'][-1]
-                pos_amount = self.pos_amount #self.portfolio.get_lot_size(symbol)/stop
+                close, trade = self.trade_signal(symbol, df, last_signal)
 
                 if close:
                     for id in open_pos_cur['tradeId']:
                         robot.close_trade(dict(tradeId=int(row[id]), currency=symbol),
-                                          self.portfolio, **self.close_args)
+                                          self.portfolio, **close)
 
-                if signal == "Buy":
-                    trade = trade_pat.create_trade(symbol=symbol, is_buy=True,
-                                                   amount=pos_amount, stop=-stop)
-                    robot.open_trade(trade, self.portfolio)
-
-                elif signal == "Sell":
-                    trade = trade_pat.create_trade(symbol=symbol, is_buy=False,
-                                                   amount=pos_amount, stop=-stop)
+                if trade:
                     robot.open_trade(trade, self.portfolio)
 
             except Exception as ex:

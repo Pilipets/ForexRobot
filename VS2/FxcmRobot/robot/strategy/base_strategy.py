@@ -23,6 +23,13 @@ class BaseStrategy:
         self.portfolio = portfolio
         self.run_for = run_for
 
+        for symbol in self.symbols:
+            self.robot.subscribe_instrument(symbol)
+
+    def __del__(self):
+        for symbol in self.symbols:
+            self.robot.unsubscribe_instrument(symbol)
+
     def _group_porfolio_positions(self):
         data = self.robot.get_open_positions()
         if data.empty: return data.groupby([])
@@ -40,7 +47,7 @@ class BaseStrategy:
                 try:
                     id = int(id)
                     order = self.robot.get_order(id)
-                    self.logger.info("Closing order({id}) with status({order.get_status()})")
+                    self.logger.info(f"Closing order({id}) with status({order.get_status()})")
                     order.delete()
 
                 except Exception as ex:

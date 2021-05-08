@@ -8,20 +8,18 @@ import pandas as pd
 class GridStrategy(BaseStrategy):
     def __init__(self, update_period : pd.Timedelta = None,
                  lower_price = None, upper_price = None,
-                 pos_amount = None, interval_price = None,
-                 base_price = None, grid_levels = 5, moving_grid = False,
+                 interval_price = None, base_price = None,
+                 grid_levels = 5, moving_grid = False,
                  **kwargs):
         super().__init__(**kwargs)
 
         self.symbol = next(iter(self.portfolio.get_symbols()))
-        self.robot.subscribe_instrument(self.symbol)
 
         self.lower_price = lower_price
         self.upper_price = upper_price
         self.levels = grid_levels + 1
 
-        if pos_amount is None: pos_amount = 10
-        self.pos_amount = pos_amount
+        self.pos_amount = self.portfolio.get_lot_size(self.symbol)
 
         if update_period is None: update_period = pd.Timedelta(10, 'sec')
         self.update_period = update_period

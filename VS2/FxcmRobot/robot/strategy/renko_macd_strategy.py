@@ -11,8 +11,7 @@ class RenkoMacdStrategy(VectorizedStrategy):
         args = filter_dict(locals(), 'self', 'kwargs')
         self.logger.info(f'Configured {self.__class__.__name__} with {args}\n')
 
-        self.pos_amount = 10
-        self.close_args = dict(time_in_force='GTC', order_type='AtMarket', amount=self.pos_amount)
+        self.close_args = dict(time_in_force='GTC', order_type='AtMarket')
         self.trade_pat = self.portfolio.create_trade_shortcut(
             'rm_pat', is_in_pips=True, time_in_force='GTC',
             order_type='AtMarket', trailing_step=1)
@@ -34,23 +33,35 @@ class RenkoMacdStrategy(VectorizedStrategy):
 
         return client.get_df().dropna()
 
-    def trade_signal(self, df, last_signal):
-        close, signal = False, None
+    def trade_signal(self, symbol, df, last_signal):
+        close, is_buy = False, None
+
         bar_num = df["bar_num"][-1]
         crossover = (np.sign(df["macd"][-1] - df["macd_signal"][-1]) +
             np.sign(df["macd_slope"][-1] - df["macd_signal_slope"][-1]))
 
         if last_signal is None:
-            if bar_num >= 2 and crossover == 2: signal = "Buy"
-            elif bar_num <= -2 and crossover == -2: signal = "Sell"
+            if bar_num >= 2 and crossover == 2: is_buy = True
+            elif bar_num <= -2 and crossover == -2: is_buy = False
             
         elif last_signal == "long":
-            if bar_num <= -2 and crossover == -2: close, signal = True, "Sell"
+            if bar_num <= -2 and crossover == -2: close, is_buy = True, False
             elif crossover == -2: close = True
             
         elif last_signal == "short":
-            if bar_num >= 2 and crossover == 2: close, signal = True, "Buy"
+            if bar_num >= 2 and crossover == 2: close, is_buy = True, True
             elif crossover == 2: close = True
 
-        if close or signal: self.logger.info(f'Close[{close}], Signal[{signal}] found')
-        return close, signal
+        trade = None
+        if close or is_buy:
+            self.logger.info(f'Close[{close}], Signal[{"Buy" if is_buy else "Sell"}] found')
+            if close:
+                close = self.close_args
+                close['amount'] = self.portfolio.get_lot_size(symbol)
+
+            if is_buy:
+                amount = self.portfolio.get_lot_size(symbol)
+                trade = self.trade_pat(
+                    symbol=symbol, is_buy=is_buy,amount=pos_amount, stop=-10)
+
+        return close, trade

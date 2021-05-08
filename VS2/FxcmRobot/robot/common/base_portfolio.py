@@ -17,14 +17,15 @@ class TradeShortcut(dict):
 
 
 class BasePortfolio:
-    def __init__(self, robot, symbols, pile_size, risk_rate = 0.03, coefs = None):
+    def __init__(self, robot, symbols, lot_sizes = dict(), lot_size = 10):
         self.robot = robot
         self.symbols = set(symbols)
-        if not coefs: coefs = [1/len(symbols) for _ in range(len(symbols))]
+        self.lot_sizes = lot_sizes
 
-        self.risk_rate = risk_rate
-        self.pile_sizes = {sym : pile_size * coefs[i] for i, sym in enumerate(symbols)}
-        self.lot_sizes = {sym : int(pile_size * self.risk_rate) for sym in symbols}
+        for symbol in self.symbols:
+            if symbol not in self.lot_sizes:
+                self.lot_sizes[symbol] = lot_size
+
         self.__dict__['id'] = self.id
 
         self.trade_shortcuts = {}
@@ -56,9 +57,7 @@ class BasePortfolio:
         return self.symbols
 
     def __repr__(self):
-        args = self.__dict__
-        args['id'] = self.id
-        return f'{self.__class__.__name__}({args})'
+        return f'{self.__class__.__name__}({self.__dict__})'
 
     @property
     def id(self):

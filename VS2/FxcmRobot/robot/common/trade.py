@@ -28,7 +28,7 @@ class Trade:
         return self.order_type
 
     def get_fxcm_args(self):
-        args = copy.copy(self.__dict__)
+        args = copy.copy(self.__dict__); del args['order_id']
 
         # Modifying names
         for x, y in [('session', 'time_in_force')]:

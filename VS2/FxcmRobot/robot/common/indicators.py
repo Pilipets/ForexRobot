@@ -32,7 +32,7 @@ def BollingerBands(df, period = 20, up_std = 2, dn_std = 2):
 
 import statsmodels.api as sm
 
-def slope(ser, n):
+def slope(ser, n = 5):
     slopes = [0 for i in range(n-1)]
     for i in range(n, len(ser)+1):
         y = ser[i-n : i]

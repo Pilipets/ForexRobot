@@ -95,3 +95,27 @@ class FxRobot:
         if type(symbols) == list: data = data[data['currency'].isin(symbols)]
         if type(columns) == list: data = data[columns]
         return data
+
+    def subscribe_instrument(self, symbols):
+        if type(symbols) == str: symbols = list(symbols)
+        res = [None] * len(symbols)
+        for idx, symbol in enumerate(symbols):
+            res[idx] = self.api.subscribe_instrument(symbol)
+        return res
+
+    def unsubscribe_instrument(self, symbols):
+        if type(symbols) == str: symbols = list(symbols)
+        res = [None] * len(symbols)
+        for idx, symbol in enumerate(symbols):
+            res[idx] = self.api.unsubscribe_instrument(symbol)
+        return res
+
+    def subscribe_market_data(self, symbols, callbacks):
+        if type(symbols) == str: symbols = list(symbols)
+        for symbol in symbols:
+            self.api.subscribe_market_data(symbol, callbacks)
+
+    def unsubscribe_market_data(self, symbols):
+        if type(symbols) == str: symbols = list(symbols)
+        for symbol in symbols:
+            self.api.unsubscribe_market_data(symbol)

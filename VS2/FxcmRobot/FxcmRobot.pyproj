@@ -27,6 +27,9 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="backtest\common.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="backtest\renko_macd.py">
       <SubType>Code</SubType>
     </Compile>

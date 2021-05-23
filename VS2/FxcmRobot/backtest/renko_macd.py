@@ -1,36 +1,12 @@
-import pandas as pd
 import numpy as np
 
 from robot.common import indicators
-from backtesting import Strategy, Backtest
-from backtesting.lib import resample_apply
+from backtesting import  Backtest
+from backtesting.lib import TrailingStrategy
 
-def prepare_df(df):
-    df = df.copy()
-    df.rename(columns={'Open':'open', 'High':'high', 'Low':'low',
-                       'Close':'close', 'Volume':'tickqty'}, inplace=True)
-    df.index.names = ['date']
-
-    renko_df = indicators.RenkoDF(df)
-    df = df.merge(renko_df.loc[:,["date", "bar_num"]], how="outer", on="date")
-    df["bar_num"].fillna(method = 'ffill', inplace = True)
-
-    df.rename(columns={'open':'Open', 'high':'High', 'low':'Low',
-             'close':'Close', 'date':'Index', 'tickqty':'Volume'}, inplace=True)
-    df.set_index('Index', inplace=True)
-    return df
-
-class RenkoMacdSystem(Strategy):
-    cash = 5000
-    pos_size = cash * 0.03
-
-    def macd_cross(self, df):
-        df = indicators.MACD(df)
-        df['macd_slope'] = indicators.slope(df['macd'])
-        df['macd_signal_slope'] = indicators.slope(df['macd_signal'])
-        
-        return (np.sign(df["macd"] - df["macd_signal"]) +
-                np.sign(df["macd_slope"] - df["macd_signal_slope"]))
+class RenkoMacdSystem(TrailingStrategy):
+    cash = 25000
+    pos_size = int(cash * 0.05)
     
     def init(self):
         df = self.data.df.copy()
@@ -48,6 +24,9 @@ class RenkoMacdSystem(Strategy):
         self.macd_cross = self.I(lambda: df['macd_cross'], name='macd_cross')
         self.bar_num = self.I(lambda: df['bar_num'], name='bar_num')
         self.atr = self.I(lambda: df['atr'], name='atr')
+        
+        self.set_atr_periods(20)
+        self.set_trailing_sl(1)
         
     def next(self):
         df = self.data
@@ -77,13 +56,21 @@ class RenkoMacdSystem(Strategy):
         if close: self.position.close()
 
         pos_size= RenkoMacdSystem.pos_size
-        if is_buy == True: self.buy(size=pos_size/price, sl=price - atr)
-        elif is_buy == False: self.sell(size=pos_size/price, sl=price + atr)
+        if is_buy == True: self.buy(size=pos_size//price)
+        elif is_buy == False: self.sell(size=pos_size//price)
 
-from backtesting.test import GOOG
 
-data = prepare_df(GOOG)
-backtest = Backtest(data, RenkoMacdSystem, cash=RenkoMacdSystem.cash, commission=.002, hedging=True)
+from backtest.common import *
+import pandas as pd
+
+fp = "E:\Programming\Trading\Data\KHC.USUSD_Candlestick_1_M_BID_23.12.2020-15.05.2021.csv"
+df = pd.read_csv(fp, parse_dates = ["Local time"],
+                 date_parser=lambda x: pd.to_datetime(x, utc=True))
+df = dukascopy_filter(df)
+data = prepare_df(df)
+
+backtest = Backtest(data, RenkoMacdSystem, cash=RenkoMacdSystem.cash,
+                    commission=.002, hedging=True)
 print(backtest.run())
 
 backtest.plot()

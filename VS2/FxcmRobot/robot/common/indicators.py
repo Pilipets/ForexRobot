@@ -56,7 +56,7 @@ def RenkoDF(df, atr_period = 120, brick_size = 0.5):
     df.reset_index(inplace=True)
 
     renko = Renko(df)
-    renko.brick_size = min(atr_brick_size, brick_size)
+    renko.brick_size = max(atr_brick_size, brick_size)
     renko_df = renko.get_ohlc_data()
 
     renko_df["bar_num"] = np.where(renko_df["uptrend"]==True, 1 , np.where(renko_df["uptrend"] == False, -1, 0))

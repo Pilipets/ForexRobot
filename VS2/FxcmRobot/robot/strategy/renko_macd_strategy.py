@@ -53,15 +53,16 @@ class RenkoMacdStrategy(VectorizedStrategy):
             elif crossover == 2: close = True
 
         trade = None
-        if close or is_buy:
+        if close or is_buy is not None:
             self.logger.info(f'Close[{close}], Signal[{"Buy" if is_buy else "Sell"}] found')
             if close:
                 close = self.close_args
                 close['amount'] = self.portfolio.get_lot_size(symbol)
 
-            if is_buy:
+            if is_buy is not None:
                 amount = self.portfolio.get_lot_size(symbol)
-                trade = self.trade_pat(
-                    symbol=symbol, is_buy=is_buy,amount=pos_amount, stop=-10)
+                trade = self.trade_pat.create_trade(
+                    symbol=symbol, is_buy=is_buy,
+                    amount=self.portfolio.get_lot_size(symbol), stop=-10)
 
         return close, trade

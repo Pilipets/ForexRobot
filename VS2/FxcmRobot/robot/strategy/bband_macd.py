@@ -36,7 +36,7 @@ class BBandMacdStrategy(VectorizedStrategy):
         if df['bbands_percent'] <= 0.6 and crossover == 2: is_buy = True
         elif df['bbands_percent'] >= 0.4 and crossover == -2: is_buy = False
 
-        if is_buy:
+        if is_buy is not None:
             self.logger.info(f'Signal[{"Buy" if is_buy else "Sell"}] found')
 
             amount = self.portfolio.get_lot_size(symbol)

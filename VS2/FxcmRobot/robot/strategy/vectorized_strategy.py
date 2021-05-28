@@ -107,7 +107,7 @@ class VectorizedStrategy(BaseStrategy):
 
                 if close:
                     for id in open_pos_cur['tradeId']:
-                        robot.close_trade(dict(tradeId=int(row[id]), currency=symbol),
+                        robot.close_trade(dict(tradeId=int(id), currency=symbol),
                                           self.portfolio, **close)
 
                 if trade:

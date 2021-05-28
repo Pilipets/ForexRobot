@@ -1,45 +1,45 @@
 import numpy as np
 
 from robot.common import indicators
-from backtesting import  Backtest
+from backtesting import  Backtest, Strategy
 from backtesting.lib import TrailingStrategy
 
 class RenkoMacdSystem(TrailingStrategy):
-    cash = 25000
-    pos_size = int(cash * 0.05)
+    cash = 250000
+    pos_size = cash * 0.05
     
     def init(self):
-        df = self.data.df.copy()
-        df.rename(columns={'Open':'open', 'High':'high', 'Low':'low',
+        DF = self.data.df.copy()
+        DF.rename(columns={'Open':'open', 'High':'high', 'Low':'low',
                            'Close':'close', 'Volume':'tickqty'}, inplace=True)
 
-        df = indicators.MACD(df)
-        df['macd_slope'] = indicators.slope(df['macd'])
-        df['macd_signal_slope'] = indicators.slope(df['macd_signal'])
-        df['macd_cross'] = (np.sign(df["macd"] - df["macd_signal"]) +
-                           np.sign(df["macd_slope"] - df["macd_signal_slope"]))
+        DF = indicators.MACD(DF)
+        DF['macd_slope'] = indicators.slope(DF['macd'])
+        DF['macd_signal_slope'] = indicators.slope(DF['macd_signal'])
+        self.data.df['macd_cross'] = (np.sign(DF["macd"] - DF["macd_signal"]) +
+                           np.sign(DF["macd_slope"] - DF["macd_signal_slope"]))
 
-        df = indicators.ATR(df)
+        DF = indicators.ATR(DF, 20)
+        self.data.df['bar_num'] = DF['bar_num']
+        self.data.df['atr'] = DF['atr']
 
-        self.macd_cross = self.I(lambda: df['macd_cross'], name='macd_cross')
-        self.bar_num = self.I(lambda: df['bar_num'], name='bar_num')
-        self.atr = self.I(lambda: df['atr'], name='atr')
+        self.macd_cross = self.I(lambda: self.data.df['macd_cross'], name='macd_cross')
+        self.bar_num = self.I(lambda: self.data.df['bar_num'], name='bar_num')
         
-        self.set_atr_periods(20)
-        self.set_trailing_sl(1)
+        self.set_atr_periods(50)
+        self.set_trailing_sl(2)
         
     def next(self):
-        df = self.data
         price = self.data.Close[-1]
-        atr = self.atr[-1]
+        atr = self.data.atr[-1]
 
         if not self.position:  last_signal = None
         elif self.position.is_long: last_signal = "long"
         else: last_signal = "short"
 
         close, is_buy = False, None
-        bar_num = self.bar_num[-1]
-        crossover = self.macd_cross[-1]
+        bar_num = self.data.bar_num[-1]
+        crossover = self.data.macd_cross[-1]
 
         if last_signal is None:
             if bar_num >= 2 and crossover == 2: is_buy = True
@@ -54,23 +54,26 @@ class RenkoMacdSystem(TrailingStrategy):
             elif crossover == 2: close = True
 
         if close: self.position.close()
-
         pos_size= RenkoMacdSystem.pos_size
-        if is_buy == True: self.buy(size=pos_size//price)
-        elif is_buy == False: self.sell(size=pos_size//price)
+        
+        if atr > 0.1:
+            if is_buy == True: self.buy(tp=price+1.5*atr, size=int(pos_size/price))
+            elif is_buy == False: self.sell(tp=price-1.5*atr, size=int(pos_size/price))
 
 
 from backtest.common import *
 import pandas as pd
 
-fp = "E:\Programming\Trading\Data\KHC.USUSD_Candlestick_1_M_BID_23.12.2020-15.05.2021.csv"
+fp = "E:\Programming\Trading\Data\EBAY.USUSD_Candlestick_1_M_BID_01.07.2020-22.05.2021.csv"
 df = pd.read_csv(fp, parse_dates = ["Local time"],
-                 date_parser=lambda x: pd.to_datetime(x, utc=True))
+                 date_parser=lambda x: pd.to_datetime(x, utc=True, dayfirst=True))
+
 df = dukascopy_filter(df)
 data = prepare_df(df)
 
-backtest = Backtest(data, RenkoMacdSystem, cash=RenkoMacdSystem.cash,
+data2 = data
+backtest = Backtest(data2, RenkoMacdSystem, cash=RenkoMacdSystem.cash,
                     commission=.002, hedging=True)
 print(backtest.run())
 
-backtest.plot()
+backtest.plot(resample=False, filename="temp.html")

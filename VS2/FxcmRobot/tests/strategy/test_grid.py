@@ -11,12 +11,11 @@ def test_grid():
     strategy = GridStrategy(
         robot = bot,
         portfolio= portfolio,
-        run_for = pd.Timedelta(15, unit='min'),
+        run_for = pd.Timedelta(8, unit='hours'),
         lower_price = 1.156,
         upper_price = 1.5346,
         grid_levels = 5,
         moving_grid=True,
         update_period = pd.Timedelta(60, unit='sec')
     )
-    
     strategy.run()

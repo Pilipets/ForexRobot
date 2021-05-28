@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>9a2c5c8d-0126-4e4e-97f4-7082a37afc0f</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>backtest\renko_macd.py</StartupFile>
+    <StartupFile>backtest\bband_macd.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -27,6 +27,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="backtest\bband_macd.py" />
     <Compile Include="backtest\common.py">
       <SubType>Code</SubType>
     </Compile>
